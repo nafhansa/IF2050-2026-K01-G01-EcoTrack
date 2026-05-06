@@ -75,7 +75,8 @@ public class Main extends Application {
 
         // Menu items
         for (int i = 0; i < UIConstants.MENU_ITEMS.length; i++) {
-            Button menuItem = createMenuItem(UIConstants.MENU_ICONS[i] + "  " + UIConstants.MENU_ITEMS[i], i == 0);
+            String menuName = UIConstants.MENU_ITEMS[i];
+            Button menuItem = createMenuItem(UIConstants.MENU_ICONS[i] + "  " + menuName, i == 0);
             menuItem.setOnAction(e -> {
                 // Update active state
                 sidebar.getChildren().stream()
@@ -88,7 +89,7 @@ public class Main extends Application {
                 menuItem.setStyle("-fx-background-color: " + UIConstants.SIDEBAR_ACTIVE_BG + "; -fx-text-fill: black; " +
                     "-fx-font-size: 14; -fx-padding: 12; -fx-background-radius: 8; -fx-alignment: center-left; -fx-max-width: Infinity; -fx-font-weight: bold");
 
-                loadPage(UIConstants.MENU_ITEMS[i]);
+                loadPage(menuName);
             });
             sidebar.getChildren().add(menuItem);
         }
