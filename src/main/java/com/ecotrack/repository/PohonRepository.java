@@ -5,10 +5,9 @@ import com.ecotrack.entity.DataPohon;
 import java.util.List;
 
 public interface PohonRepository {
-    List<DataPohon> findAll();           // Q-005
-    boolean save(DataPohon d);           // Q-006
-    DataPohon findById(String id);       // Q-007
-    boolean update(DataPohon d);         // Q-008
-    boolean delete(String id);           // Q-009
-    DataPohon findByNama(String nama);   // Q-010
+    List<DataPohon> findAll();              // Q-007
+    DataPohon findByIdOrNama(String q);     // Q-008
+    boolean save(DataPohon d);              // Q-009
+    boolean update(DataPohon d);            // Q-010
+    boolean delete(String id);              // Q-011
 }

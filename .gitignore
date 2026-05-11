@@ -4,11 +4,3 @@ target/
 .idea/
 *.iml
 *.log
-*.jar
-dist/
-build/
-out/
-.vscode/
-.DS_Store
-ecotrack_photos/
-exports/
