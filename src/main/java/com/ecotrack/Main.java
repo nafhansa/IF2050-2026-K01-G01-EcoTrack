@@ -2,11 +2,9 @@ package com.ecotrack;
 
 import com.ecotrack.boundary.*;
 import com.ecotrack.controller.*;
-import com.ecotrack.repository.*;
 import com.ecotrack.util.UIConstants;
 import javafx.application.Application;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -19,32 +17,26 @@ public class Main extends Application {
     private VBox sidebar;
     private StackPane contentArea;
 
-    private PohonController pohonController;
+    private DataPohonController pohonController;
     private PenanamanController penanamanController;
     private LaporanPohonController laporanController;
     private StatistikController statistikController;
 
     @Override
     public void start(Stage primaryStage) {
-        // Initialize controllers (with repository implementations when ready)
         initializeControllers();
 
-        // Root layout
         root = new BorderPane();
         root.setStyle("-fx-background-color: " + UIConstants.CONTENT_BG);
 
-        // Sidebar
         sidebar = createSidebar();
         root.setLeft(sidebar);
 
-        // Content area
         contentArea = new StackPane();
         root.setCenter(contentArea);
 
-        // Load default page
         loadPage("Dashboard Statistik");
 
-        // Scene
         Scene scene = new Scene(root, 1200, 800);
         primaryStage.setTitle("EcoTrack - Manajemen Pendataan Pohon");
         primaryStage.setScene(scene);
@@ -52,10 +44,9 @@ public class Main extends Application {
     }
 
     private void initializeControllers() {
-        // TODO: Implement repository classes and pass them here
-        pohonController = new PohonController(null);
-        penanamanController = new PenanamanController(null);
-        laporanController = new LaporanPohonController(null, pohonController);
+        pohonController = new DataPohonController();
+        penanamanController = new PenanamanController();
+        laporanController = new LaporanPohonController();
         statistikController = new StatistikController();
     }
 
@@ -66,19 +57,16 @@ public class Main extends Application {
         sidebar.setPadding(new Insets(24, 16, 24, 16));
         sidebar.setSpacing(8);
 
-        // Logo
         Label logo = new Label("\uD83C\uDF3F EcoTrack");
         logo.setStyle("-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: " + UIConstants.SIDEBAR_LOGO_COLOR);
         logo.setPadding(new Insets(0, 0, 24, 12));
 
         sidebar.getChildren().add(logo);
 
-        // Menu items
         for (int i = 0; i < UIConstants.MENU_ITEMS.length; i++) {
             String menuName = UIConstants.MENU_ITEMS[i];
             Button menuItem = createMenuItem(UIConstants.MENU_ICONS[i] + "  " + menuName, i == 0);
             menuItem.setOnAction(e -> {
-                // Update active state
                 sidebar.getChildren().stream()
                     .filter(node -> node instanceof Button)
                     .forEach(node -> {

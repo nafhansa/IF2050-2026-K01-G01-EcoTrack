@@ -1,38 +1,29 @@
 package com.ecotrack.controller;
 
 import com.ecotrack.entity.LaporanPohon;
-import com.ecotrack.repository.LaporanRepository;
-import com.ecotrack.util.FileManager;
-
-import java.io.File;
-import java.util.List;
 
 public class LaporanPohonController {
 
-    private final LaporanRepository repository;
-    private final PohonController pohonController;
-
-    public LaporanPohonController(LaporanRepository repository, PohonController pohonController) {
-        this.repository = repository;
-        this.pohonController = pohonController;
+    public String prosesLaporan(LaporanPohon dataLaporan) {
+        // Algo-058
+        dataLaporan.setEstimasiKarbon(hitungEstimasiKarbon(dataLaporan));
+        return simpanLaporan(dataLaporan);
     }
 
-    public String prosesLaporan(LaporanPohon data) {
-        // Algo-015
-        if (data.getKondisi() == null || data.getLokasi() == null) {
-            return "Data belum lengkap";
+    public float hitungEstimasiKarbon(LaporanPohon dataLaporan) {
+        // Algo-059
+        String kondisi = dataLaporan.getKondisi();
+        if (kondisi != null && kondisi.equalsIgnoreCase("ditebang")) {
+            return 0;
+        } else if (kondisi != null && kondisi.equalsIgnoreCase("rusak")) {
+            return dataLaporan.getEstimasiKarbon() * 0.5f;
+        } else {
+            return dataLaporan.getEstimasiKarbon();
         }
-        data.setEstimasiKarbon(hitungKapasitasBaru(data));
-        boolean success = repository.save(data);
-        return success ? "Berhasil" : "Gagal";
     }
 
-    public float hitungKapasitasBaru(LaporanPohon data) {
-        // Hitung ulang estimasi karbon setelah pohon rusak/mati
-        return 0;
-    }
-
-    public List<LaporanPohon> getRiwayatLaporan() {
-        return repository.getHistoryLaporan();
+    public String simpanLaporan(LaporanPohon dataLaporan) {
+        // Algo-060: result <- LaporanPohon.simpanLaporan(dataLaporan)
+        return "Berhasil";
     }
 }

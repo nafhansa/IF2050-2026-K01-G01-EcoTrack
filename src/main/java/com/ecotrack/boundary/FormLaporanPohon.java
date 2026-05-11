@@ -2,16 +2,20 @@ package com.ecotrack.boundary;
 
 import com.ecotrack.controller.LaporanPohonController;
 import com.ecotrack.entity.LaporanPohon;
+import com.ecotrack.util.FileManager;
 import com.ecotrack.util.UIConstants;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.input.DragEvent;
 import javafx.scene.layout.*;
 
-import java.time.LocalDate;
+import java.io.File;
 import java.util.List;
 
 public class FormLaporanPohon extends BorderPane {
+
+    private String fileFoto;
+    private Object dataInput;
 
     private final LaporanPohonController controller;
     private VBox contentArea;
@@ -25,7 +29,6 @@ public class FormLaporanPohon extends BorderPane {
     private void initialize() {
         setStyle("-fx-background-color: " + UIConstants.CONTENT_BG);
 
-        // Header
         VBox header = new VBox(8);
         header.setPadding(new Insets(UIConstants.PADDING_CONTENT));
 
@@ -38,15 +41,12 @@ public class FormLaporanPohon extends BorderPane {
         header.getChildren().addAll(title, subtitle);
         setTop(header);
 
-        // Split layout
         HBox splitPane = new HBox(UIConstants.GAP_CARD);
         splitPane.setPadding(new Insets(0, UIConstants.PADDING_CONTENT, UIConstants.PADDING_CONTENT, UIConstants.PADDING_CONTENT));
 
-        // Panel kiri - Form
         VBox formPanel = createFormPanel();
         HBox.setHgrow(formPanel, Priority.ALWAYS);
 
-        // Panel kanan - Riwayat
         VBox riwayatPanel = createRiwayatPanel();
         riwayatPanel.setPrefWidth(300);
 
@@ -71,14 +71,13 @@ public class FormLaporanPohon extends BorderPane {
         fieldLokasi.setPromptText("Contoh: Taman Kota A, Blok B");
 
         ComboBox<String> comboKondisi = new ComboBox<>();
-        comboKondisi.getItems().addAll("Rusak", "Mati", "Ditebang");
+        comboKondisi.getItems().addAll("rusak", "mati", "ditebang");
         comboKondisi.setPromptText("Pilih status kondisi");
 
         TextArea catatanArea = new TextArea();
         catatanArea.setPromptText("Deskripsi kondisi atau keterangan tambahan...");
         catatanArea.setPrefRowCount(4);
 
-        // Upload area
         VBox uploadArea = new VBox(8);
         uploadArea.setPadding(new Insets(16));
         uploadArea.setStyle("-fx-border-color: #A8E063; -fx-border-style: dashed; -fx-border-width: 2; -fx-border-radius: " + UIConstants.RADIUS_MODAL);
@@ -86,7 +85,7 @@ public class FormLaporanPohon extends BorderPane {
         uploadArea.setOnDragDropped(this::handleDrop);
         uploadArea.setOnMouseClicked(e -> handleFileUpload());
 
-        Label uploadIcon = new Label("⬆");
+        Label uploadIcon = new Label("\u2B06");
         uploadIcon.setStyle("-fx-font-size: 32; -fx-text-fill: #9E9E9E");
 
         Label uploadText = new Label("Drag & drop foto di sini");
@@ -110,8 +109,9 @@ public class FormLaporanPohon extends BorderPane {
             LaporanPohon data = new LaporanPohon();
             data.setLokasi(fieldLokasi.getText());
             data.setKondisi(comboKondisi.getValue());
-            data.setTanggalLaporan(LocalDate.now());
-            kirimDataLaporan(data);
+            data.setFileFoto(fileFoto);
+            dataInput = data;
+            prosesLaporan(data, fileFoto != null ? new File(fileFoto) : null);
         });
 
         panel.getChildren().addAll(title, sub,
@@ -139,19 +139,39 @@ public class FormLaporanPohon extends BorderPane {
         return panel;
     }
 
-    public void tampilkanFormLaporan() {
-        // Already shown in split layout
+    public boolean validasiData(Object dataInput) {
+        // Algo-019
+        if (dataInput instanceof LaporanPohon) {
+            LaporanPohon l = (LaporanPohon) dataInput;
+            return l.getKondisi() != null && l.getLokasi() != null;
+        }
+        return false;
     }
 
-    public void kirimDataLaporan(LaporanPohon dataLaporan) {
-        String result = controller.prosesLaporan(dataLaporan);
-        // Show alert result
-        tampilkanRiwayatLaporan();
+    public void prosesLaporan(Object dataInput, File fileFoto) {
+        // Algo-020
+        if (validasiData(dataInput)) {
+            if (dataInput instanceof LaporanPohon) {
+                LaporanPohon l = (LaporanPohon) dataInput;
+                if (fileFoto != null) {
+                    l.setFileFoto(fileFoto.getAbsolutePath());
+                }
+            }
+            String result = controller.prosesLaporan((LaporanPohon) dataInput);
+            tampilkanStatus(result);
+        } else {
+            tampilkanStatus("Data laporan belum lengkap");
+        }
+    }
+
+    public void tampilkanStatus(String status) {
+        // Algo-021
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, status, ButtonType.OK);
+        alert.showAndWait();
     }
 
     public void tampilkanRiwayatLaporan() {
-        List<LaporanPohon> riwayat = controller.getRiwayatLaporan();
-        riwayatList.getItems().setAll(riwayat);
+        riwayatList.getItems().clear();
     }
 
     public void handleFileUpload() {

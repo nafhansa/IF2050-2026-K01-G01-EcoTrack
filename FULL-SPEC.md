@@ -1,46 +1,39 @@
 # FULL-SPEC.md — EcoTrack
-> **Sumber kebenaran: PDF Final DPPLOO-01 (51 halaman)**
-> **Tujuan: Source code harus PERSIS mengikuti PDF Final**
+> **Sumber kebenaran: DPPLOO-01 (51 halaman) — Dasar Perancangan Perangkat Lunak**
+> **Tujuan: Source code harus PERSIS mengikuti DPPLOO-01**
 > **UI/estetika/warna: TIDAK DIUBAH**
+> **Arsitektur: BCE (Boundary-Controller-Entity) — TANPA Repository layer**
 
 ---
 
-## 0. CODING ROADMAP — MULAI DARI MANA?
-
-### Urutan yang disarankan (bottom-up, tidak ada dependensi maju):
+## 0. CODING ROADMAP
 
 ```
-PHASE 1 — FONDASI (Mulai di sini)
-  Step 1. Setup project Maven/Gradle + tambah dependency JDBC PostgreSQL + JavaFX
-  Step 2. Buat DBConnection.java (singleton JDBC)
-  Step 3. Buat semua schema SQL di PostgreSQL (4 tabel)
-  Step 4. Buat semua Entity class (User, DataPohon, DataPenanaman, LaporanPohon)
+PHASE 1 — FONDASI
+  Step 1. Setup project Maven + dependency JDBC PostgreSQL + JavaFX
+  Step 2. Buat DBConnection.java (singleton JDBC, hardcoded values)
+  Step 3. Buat schema SQL di PostgreSQL (4 tabel)
+  Step 4. Buat Entity classes (User, DataPohon, DataPenanaman, LaporanPohon)
 
-PHASE 2 — DATA LAYER
-  Step 5. Buat PohonRepository.java     (Q-007 s/d Q-011)
-  Step 6. Buat PenanamanRepository.java (Q-001 s/d Q-005)
-  Step 7. Buat LaporanRepository.java   (Q-006)
-  Step 8. Buat FileManager.java         (simpan/ambil foto lokal)
+PHASE 2 — BUSINESS LOGIC (Controller langsung panggil Entity)
+  Step 5.  Buat PenanamanController.java      (C-11, Algo-051 s/d Algo-057)
+  Step 6.  Buat LaporanPohonController.java   (C-12, Algo-058 s/d Algo-060)
+  Step 7.  Buat DataPohonController.java      (C-13, Algo-061 s/d Algo-070)
+  Step 8.  Buat StatistikController.java      (C-14, Algo-071 s/d Algo-076)
+  Step 9.  Buat FileManager.java              (simpan/ambil foto lokal)
 
-PHASE 3 — BUSINESS LOGIC
-  Step 9.  Buat DataPohonController.java          (CRUD pohon + validasi + foto)
-  Step 10. Buat PenanamanController.java      (CRUD penanaman + hitungEstimasiKarbon)
-  Step 11. Buat LaporanPohonController.java   (prosesLaporan + hitungEstimasiKarbon)
-  Step 12. Buat StatistikController.java      (hitungStatistik + terapkanFilter)
-
-PHASE 4 — UI (JavaFX)
-  Step 13. Buat HalamanDataPohon.fxml + HalamanDataPohon.java       (UC03, UC07)
-  Step 14. Buat HalamanDataPenanaman.fxml + HalamanDataPenanaman.java (UC01, UC05)
-  Step 15. Buat FormLaporanPohon.fxml + FormLaporanPohon.java        (UC02)
-  Step 16. Buat HalamanStatistik.fxml + HalamanStatistik.java        (UC04, UC08)
-  Step 17. Buat FormLaporanPenanaman.java (UC05)
-  Step 18. Buat FormDataPohon.java (UC06, UC07)
-  Step 19. Buat Main.java + navigasi sidebar (User method baru)
+PHASE 3 — UI (JavaFX Boundary)
+  Step 10. Buat HalamanDataPenanaman.java     (C-02, UC01, UC05)
+  Step 11. Buat FormLaporanPohon.java         (C-04, UC02)
+  Step 12. Buat HalamanDataPohon.java         (C-06, UC03, UC07)
+  Step 13. Buat HalamanStatistik.java         (C-08, UC04, UC08)
+  Step 14. Buat FormLaporanPenanaman.java     (C-09, UC05)
+  Step 15. Buat FormDataPohon.java            (C-10, UC06, UC07)
+  Step 16. Buat Main.java + navigasi sidebar
 ```
 
 ### Docker PostgreSQL Setup
 
-**Struktur file:**
 ```
 ecotrack/
 ├── docker-compose.yml
@@ -55,7 +48,6 @@ ecotrack/
 #### `docker-compose.yml`
 ```yaml
 version: '3.8'
-
 services:
   ecotrack-db:
     image: postgres:16.3
@@ -70,57 +62,52 @@ services:
       - ecotrack_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
-
 volumes:
   ecotrack_data:
 ```
 
 #### `db/init.sql`
 ```sql
--- =============================================
--- ECOTRACK DATABASE INIT SCRIPT
--- =============================================
-
 CREATE TABLE IF NOT EXISTS "user" (
-    id_user   VARCHAR(36) PRIMARY KEY,
-    nama      VARCHAR(100) NOT NULL,
-    role      VARCHAR(50)  NOT NULL
+    id_user   VARCHAR PRIMARY KEY,
+    nama      VARCHAR NOT NULL,
+    role      VARCHAR NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS data_pohon (
-    id_pohon                 VARCHAR(36)  PRIMARY KEY,
-    id_user                  VARCHAR(36)  REFERENCES "user"(id_user),
-    nama_pohon               VARCHAR(100) NOT NULL,
-    usia                     INT,
-    lokasi                   VARCHAR(200),
-    serapan_karbon           FLOAT,
-    file_foto                VARCHAR(500),
-    created_at               TIMESTAMP DEFAULT NOW(),
-    updated_at               TIMESTAMP DEFAULT NOW()
+    id_pohon              VARCHAR PRIMARY KEY,
+    id_user               VARCHAR REFERENCES "user"(id_user),
+    nama_pohon            VARCHAR NOT NULL,
+    usia                  INT,
+    lokasi                VARCHAR,
+    serapan_karbon        FLOAT,
+    file_foto             VARCHAR,
+    created_at            TIMESTAMP DEFAULT NOW(),
+    updated_at            TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS data_penanaman (
-    id_penanaman      VARCHAR(36)  PRIMARY KEY,
-    id_user           VARCHAR(36)  REFERENCES "user"(id_user),
-    id_pohon          VARCHAR(36)  REFERENCES data_pohon(id_pohon),
-    lokasi            VARCHAR(200) NOT NULL,
-    jenis_pohon       VARCHAR(100) NOT NULL,
-    jumlah_pohon      INT          NOT NULL,
-    tanggal           DATE         NOT NULL,
+    id_penanaman      VARCHAR PRIMARY KEY,
+    id_user           VARCHAR REFERENCES "user"(id_user),
+    id_pohon          VARCHAR REFERENCES data_pohon(id_pohon),
+    lokasi            VARCHAR NOT NULL,
+    jenis_pohon       VARCHAR NOT NULL,
+    jumlah_pohon      INT NOT NULL,
+    tanggal           DATE NOT NULL,
     estimasi_karbon   FLOAT,
     created_at        TIMESTAMP DEFAULT NOW(),
     updated_at        TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS laporan_pohon (
-    id_laporan      VARCHAR(36)  PRIMARY KEY,
-    id_user         VARCHAR(36)  REFERENCES "user"(id_user),
-    id_pohon        VARCHAR(36)  REFERENCES data_pohon(id_pohon),
-    kondisi         VARCHAR(50)  NOT NULL,
-    lokasi          VARCHAR(200) NOT NULL,
-    file_foto       VARCHAR(500),
+    id_laporan      VARCHAR PRIMARY KEY,
+    id_user         VARCHAR REFERENCES "user"(id_user),
+    id_pohon        VARCHAR REFERENCES data_pohon(id_pohon),
+    kondisi         VARCHAR NOT NULL,
+    lokasi          VARCHAR NOT NULL,
+    file_foto       VARCHAR,
     estimasi_karbon FLOAT,
-    tanggal_laporan DATE         NOT NULL,
+    tanggal_laporan DATE NOT NULL,
     created_at      TIMESTAMP DEFAULT NOW()
 );
 
@@ -130,7 +117,7 @@ ON CONFLICT DO NOTHING;
 ```
 
 #### `.env`
-```env
+```
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=ecotrack_db
@@ -215,7 +202,7 @@ public class DBConnection {
 | Database | PostgreSQL |
 | DB Driver | JDBC (PostgreSQL Driver) |
 | File Storage | Local Folder |
-| Build Tool | Maven atau Gradle |
+| Build Tool | Maven |
 | IDE | Visual Studio Code / IntelliJ |
 | VCS | Git / GitHub |
 
@@ -236,31 +223,27 @@ public class DBConnection {
               └─► [Local File System]
 ```
 
-### Package Structure
+### Package Structure (BCE — TANPA Repository)
 ```
 com.ecotrack/
 ├── Main.java
 ├── boundary/
-│   ├── HalamanStatistik.java
-│   ├── HalamanDataPohon.java
-│   ├── HalamanDataPenanaman.java
-│   ├── FormLaporanPohon.java
-│   ├── FormDataPohon.java
-│   └── FormLaporanPenanaman.java
+│   ├── HalamanStatistik.java          (C-08)
+│   ├── HalamanDataPohon.java          (C-06)
+│   ├── HalamanDataPenanaman.java      (C-02)
+│   ├── FormLaporanPohon.java          (C-04)
+│   ├── FormDataPohon.java             (C-10)
+│   └── FormLaporanPenanaman.java      (C-09)
 ├── controller/
-│   ├── StatistikController.java
-│   ├── DataPohonController.java
-│   ├── PenanamanController.java
-│   └── LaporanPohonController.java
+│   ├── StatistikController.java       (C-14)
+│   ├── DataPohonController.java       (C-13)
+│   ├── PenanamanController.java       (C-11)
+│   └── LaporanPohonController.java    (C-12)
 ├── entity/
-│   ├── User.java
-│   ├── DataPohon.java
-│   ├── DataPenanaman.java
-│   └── LaporanPohon.java
-├── repository/
-│   ├── PohonRepository.java
-│   ├── PenanamanRepository.java
-│   └── LaporanRepository.java
+│   ├── User.java                      (C-01)
+│   ├── DataPohon.java                 (C-07)
+│   ├── DataPenanaman.java             (C-03)
+│   └── LaporanPohon.java              (C-05)
 └── util/
     ├── DBConnection.java
     └── FileManager.java
@@ -336,16 +319,16 @@ class User {
     private String nama;
     private String role;
 
-    public void pilihMenuPenanaman();
-    public void lihatDataPohon();
-    public void lihatStatistik();
-    public void kirimLaporan(Object dataInput, File fileFoto);
-    public String pilihOpsiKelolaData(String opsi);
-    public void isiDataPenanaman(DataPenanaman dataPenanaman);
-    public Object unggahFoto(File fileFoto);
-    public void isiDataPohon(Object dataPohon);
-    public void simpanData(Object data, String jenisData);
-    public String konfirmasiHapus(String idData);
+    public void pilihMenuPenanaman();                        // Algo-001
+    public void lihatDataPohon();                            // Algo-002
+    public void lihatStatistik();                            // Algo-003
+    public void kirimLaporan(Object dataInput, File fileFoto); // Algo-004
+    public String pilihOpsiKelolaData(String opsi);          // Algo-005
+    public void isiDataPenanaman(DataPenanaman dataPenanaman); // Algo-006
+    public Object unggahFoto(File fileFoto);                 // Algo-007
+    public void isiDataPohon(Object dataPohon);              // Algo-008
+    public void simpanData(Object data, String jenisData);   // Algo-009
+    public String konfirmasiHapus(String idData);            // Algo-010
 }
 ```
 
@@ -359,11 +342,11 @@ class DataPenanaman {
     private Date tanggal;
     private float estimasiKarbon;
 
-    public void cariData(String idPenanaman);
-    public void simpanData(DataPenanaman data);
-    public void ubahData(DataPenanaman data);
-    public void hapusData(String idPenanaman);
-    public void getDataPenanaman();
+    public void cariData(String idPenanaman);      // Algo-014, Q-001/Q-002
+    public void simpanData(DataPenanaman data);    // Algo-015, Q-003
+    public void ubahData(DataPenanaman data);      // Algo-016, Q-004
+    public void hapusData(String idPenanaman);     // Algo-017, Q-005
+    public void getDataPenanaman();                // Algo-018, Q-001
 }
 ```
 
@@ -377,13 +360,13 @@ class DataPohon {
     private float serapanKarbon;
     private String fileFoto;
 
-    public void cariDataPohon(String kriteria);
-    public void getDataPohon();
-    public void simpanData(DataPohon data);
-    public void ubahData(DataPohon data);
-    public void hapusData(String idPohon);
-    public void simpanDataPohon(Object data);
-    public void simpanFoto(File file);
+    public void cariDataPohon(String kriteria);  // Algo-028, Q-007/Q-008
+    public void getDataPohon();                  // Algo-029, Q-007
+    public void simpanData(DataPohon data);      // Algo-030, Q-009
+    public void ubahData(DataPohon data);        // Algo-031, Q-010
+    public void hapusData(String idPohon);       // Algo-032, Q-011
+    public void simpanDataPohon(Object data);    // Algo-033
+    public void simpanFoto(File file);           // Algo-034
 }
 ```
 
@@ -396,7 +379,7 @@ class LaporanPohon {
     private String fileFoto;
     private float estimasiKarbon;
 
-    public void simpanLaporan(LaporanPohon data);
+    public void simpanLaporan(LaporanPohon data); // Algo-022, Q-006
 }
 ```
 
@@ -410,12 +393,12 @@ class HalamanStatistik {
     private Object grafikStatistik;
     private String filterTerpilih;
 
-    public void ambilData();
-    public void tampilkanStatistik(Object data);
-    public void pilihPeriode(String periode);
-    public void tampilkanGrafik(Object data);
-    public void perbaruiTampilan(Object data);
-    public void tampilkanPesanError(String pesan);
+    public void ambilData();                   // Algo-035
+    public void tampilkanStatistik(Object data); // Algo-036
+    public void pilihPeriode(String periode);  // Algo-037
+    public void tampilkanGrafik(Object data);  // Algo-038
+    public void perbaruiTampilan(Object data); // Algo-039
+    public void tampilkanPesanError(String pesan); // Algo-040
 }
 ```
 
@@ -425,20 +408,20 @@ class HalamanDataPohon {
     private List daftarPohon;
     private String filterData;
 
-    public void ambilDataPohon();
-    public void tampilkanData(List dataPohonList);
-    public void tampilkanDaftar();
-    public void hapusData(String idPohon);
-    public void tampilkanPesanError(String pesan);
+    public void ambilDataPohon();              // Algo-023
+    public void tampilkanData(List dataPohonList); // Algo-024
+    public void tampilkanDaftar();             // Algo-025
+    public void hapusData(String idPohon);     // Algo-026
+    public void tampilkanPesanError(String pesan); // Algo-027
 }
 ```
 
 ### 5.3 HalamanDataPenanaman (C-02)
 ```java
 class HalamanDataPenanaman {
-    public void ambilDataPenanaman();
-    public void tampilkanData(List data);
-    public void tampilkanPesanError(String pesan);
+    public void ambilDataPenanaman();          // Algo-011
+    public void tampilkanData(List data);      // Algo-012
+    public void tampilkanPesanError(String pesan); // Algo-013
 }
 ```
 
@@ -448,9 +431,9 @@ class FormLaporanPohon {
     private String fileFoto;
     private Object dataInput;
 
-    public boolean validasiData(Object dataInput);
-    public void prosesLaporan(Object dataInput, File fileFoto);
-    public void tampilkanStatus(String status);
+    public boolean validasiData(Object dataInput);        // Algo-019
+    public void prosesLaporan(Object dataInput, File fileFoto); // Algo-020
+    public void tampilkanStatus(String status);           // Algo-021
 }
 ```
 
@@ -459,22 +442,22 @@ class FormLaporanPohon {
 class FormDataPohon {
     private Object dataInput;
 
-    public void tampilkanForm();
-    public boolean validasiFile(File file);
-    public boolean validasiData(Object dataInput);
-    public void prosesInputPohon(Object data);
-    public void simpanDataPohon(Object data);
-    public void tampilkanStatus(String status);
+    public void tampilkanForm();               // Algo-045
+    public boolean validasiFile(File file);    // Algo-046
+    public boolean validasiData(Object dataInput); // Algo-047
+    public void prosesInputPohon(Object data); // Algo-048
+    public void simpanDataPohon(Object data);  // Algo-049
+    public void tampilkanStatus(String status); // Algo-050
 }
 ```
 
 ### 5.6 FormLaporanPenanaman (C-09)
 ```java
 class FormLaporanPenanaman {
-    public void tampilkanForm();
-    public void kumpulkanDataInput(DataPenanaman data);
-    public boolean validasiData(DataPenanaman data);
-    public void tampilkanStatus(String status);
+    public void tampilkanForm();               // Algo-041
+    public void kumpulkanDataInput(DataPenanaman data); // Algo-042
+    public boolean validasiData(DataPenanaman data); // Algo-043
+    public void tampilkanStatus(String status); // Algo-044
 }
 ```
 
@@ -746,40 +729,7 @@ RETURN statistik
 
 ---
 
-## 7. REPOSITORY CLASSES
-
-### 7.1 PenanamanRepository
-```java
-class PenanamanRepository {
-    public List<DataPenanaman> findAll();
-    public DataPenanaman findById(String id);
-    public boolean save(DataPenanaman d);
-    public boolean update(DataPenanaman d);
-    public boolean delete(String idPenanaman);
-}
-```
-
-### 7.2 PohonRepository
-```java
-class PohonRepository {
-    public List<DataPohon> findAll();
-    public DataPohon findByIdOrNama(String q);
-    public boolean save(DataPohon d);
-    public boolean update(DataPohon d);
-    public boolean delete(String id);
-}
-```
-
-### 7.3 LaporanRepository
-```java
-class LaporanRepository {
-    public boolean save(LaporanPohon l);
-}
-```
-
----
-
-## 8. SQL QUERIES
+## 7. SQL QUERIES
 
 | Kode | SQL | Keterangan | Kelas |
 |---|---|---|---|
@@ -799,160 +749,385 @@ class LaporanRepository {
 
 ---
 
-## 9. ALGORITMA LENGKAP
+## 8. ALGORITMA LENGKAP (Algo-001 s/d Algo-076)
 
-### Algo-001 — User.pilihMenuPenanaman()
-```
-pilihMenuPenanaman():
-  HalamanDataPenanaman.ambilDataPenanaman()
-```
+### 8.1 Kelas User
 
-### Algo-002 — User.lihatDataPohon()
+Algo-001 `pilihMenuPenanaman()`:
 ```
-lihatDataPohon():
-  HalamanDataPohon.ambilDataPohon()
+HalamanDataPenanaman.ambilDataPenanaman()
 ```
 
-### Algo-003 — User.lihatStatistik()
+Algo-002 `lihatDataPohon()`:
 ```
-lihatStatistik():
-  HalamanStatistik.ambilData()
-```
-
-### Algo-004 — User.kirimLaporan(dataInput, fileFoto)
-```
-kirimLaporan(dataInput, fileFoto):
-  FormLaporanPohon.prosesLaporan(dataInput, fileFoto)
+HalamanDataPohon.ambilDataPohon()
 ```
 
-### Algo-005 — User.pilihOpsiKelolaData(opsi)
+Algo-003 `lihatStatistik()`:
 ```
-pilihOpsiKelolaData(opsi):
-  IF opsi = "Tambah" OR opsi = "Ubah" OR opsi = "Hapus"
+HalamanStatistik.ambilData()
+```
+
+Algo-004 `kirimLaporan(dataInput, fileFoto)`:
+```
+FormLaporanPohon.prosesLaporan(dataInput, fileFoto)
+```
+
+Algo-005 `pilihOpsiKelolaData(opsi)`:
+```
+IF opsi = "Tambah" OR opsi = "Ubah" OR opsi = "Hapus"
     RETURN opsi
-  ELSE
+ELSE
     RETURN "Opsi tidak valid"
-  END IF
+END IF
 ```
 
-### Algo-006 — User.isiDataPenanaman(dataPenanaman)
+Algo-006 `isiDataPenanaman(dataPenanaman)`:
 ```
-isiDataPenanaman(dataPenanaman):
-  FormLaporanPenanaman.kumpulkanDataInput(dataPenanaman)
+FormLaporanPenanaman.kumpulkanDataInput(dataPenanaman)
 ```
 
-### Algo-007 — User.unggahFoto(fileFoto)
+Algo-007 `unggahFoto(fileFoto)`:
 ```
-unggahFoto(fileFoto):
-  IF fileFoto NOT NULL
+IF fileFoto IS NOT NULL
     RETURN fileFoto
-  ELSE
+ELSE
     RETURN "Foto belum dipilih"
-  END IF
+END IF
 ```
 
-### Algo-008 — User.isiDataPohon(dataPohon)
+Algo-008 `isiDataPohon(dataPohon)`:
 ```
-isiDataPohon(dataPohon):
-  FormDataPohon.prosesInputPohon(dataPohon)
+FormDataPohon.prosesInputPohon(dataPohon)
 ```
 
-### Algo-009 — User.simpanData(data, jenisData)
+Algo-009 `simpanData(data, jenisData)`:
 ```
-simpanData(data, jenisData):
-  IF jenisData = "penanaman"
+IF jenisData = "Penanaman"
     PenanamanController.simpanDataPenanaman(data)
-  ELSE IF jenisData = "pohon"
+ELSE IF jenisData = "Pohon"
     DataPohonController.simpanDataPohon(data)
-  END IF
+ELSE
+    RETURN "Jenis data tidak valid"
+END IF
 ```
 
-### Algo-010 — User.konfirmasiHapus(idData)
+Algo-010 `konfirmasiHapus(idData)`:
 ```
-konfirmasiHapus(idData):
-  IF data dengan idData DITEMUKAN
+IF idData IS NOT NULL
     RETURN "Hapus disetujui"
-  ELSE
+ELSE
     RETURN "Data tidak ditemukan"
-  END IF
+END IF
 ```
 
-### Algo-011 — HalamanDataPenanaman.ambilDataPenanaman()
+### 8.2 Kelas HalamanDataPenanaman
+
+Algo-011 `ambilDataPenanaman()`:
 ```
-ambilDataPenanaman():
-  dataPenanamanList <- PenanamanController.ambilDataPenanaman()
-  IF dataPenanamanList IS NOT EMPTY THEN
+dataPenanamanList <- PenanamanController.ambilDataPenanaman()
+IF dataPenanamanList IS NOT EMPTY
     tampilkanData(dataPenanamanList)
-  ELSE
+ELSE
     tampilkanPesanError("Data penanaman belum tersedia")
-  END IF
+END IF
 ```
 
-### Algo-014 — DataPenanaman.cariData(idPenanaman)
+Algo-012 `tampilkanData(dataPenanamanList)`:
 ```
-cariData(idPenanaman):
-  IF idPenanaman IS NULL
-    Q-001
-  ELSE
-    Q-002
-  END IF
+DISPLAY dataPenanamanList
 ```
 
-### Algo-019 — FormLaporanPohon.validasiData(dataInput)
+Algo-013 `tampilkanPesanError(pesan)`:
 ```
-validasiData(dataInput):
-  IF dataInput.kondisi IS NULL OR dataInput.lokasi IS NULL
+DISPLAY pesan
+```
+
+### 8.3 Kelas DataPenanaman
+
+Algo-014 `cariData(idPenanaman)`:
+```
+IF idPenanaman IS NULL
+    result <- DO QUERY Q-001
+ELSE
+    result <- DO QUERY Q-002
+END IF
+RETURN result
+```
+
+Algo-015 `simpanData(dataPenanaman)`:
+```
+result <- DO QUERY Q-003
+RETURN result
+```
+
+Algo-016 `ubahData(dataPenanaman)`:
+```
+result <- DO QUERY Q-004
+RETURN result
+```
+
+Algo-017 `hapusData(idPenanaman)`:
+```
+result <- DO QUERY Q-005
+RETURN result
+```
+
+Algo-018 `getDataPenanaman()`:
+```
+result <- DO QUERY Q-001
+RETURN result
+```
+
+### 8.4 Kelas FormLaporanPohon
+
+Algo-019 `validasiData(dataInput)`:
+```
+IF dataInput.kondisi IS NULL OR dataInput.lokasi IS NULL
     RETURN FALSE
-  ELSE
+ELSE
     RETURN TRUE
-  END IF
+END IF
 ```
 
-### Algo-020 — FormLaporanPohon.prosesLaporan(dataInput, fileFoto)
+Algo-020 `prosesLaporan(dataInput, fileFoto)`:
 ```
-prosesLaporan(dataInput, fileFoto):
-  IF validasiData(dataInput) = TRUE THEN
+IF validasiData(dataInput) = TRUE THEN
     dataInput.fileFoto <- fileFoto
     result <- LaporanPohonController.prosesLaporan(dataInput)
     tampilkanStatus(result)
-  ELSE
+ELSE
     tampilkanStatus("Data laporan belum lengkap")
-  END IF
+END IF
 ```
 
-### Algo-043 — FormLaporanPenanaman.validasiData(dataPenanaman)
+Algo-021 `tampilkanStatus(status)`:
 ```
-validasiData(dataPenanaman):
-  IF dataPenanaman.lokasi IS NULL OR dataPenanaman.jenisPohon IS NULL OR dataPenanaman.jumlahPohon <= 0
-    RETURN FALSE
-  ELSE
-    RETURN TRUE
-  END IF
+DISPLAY status
 ```
 
-### Algo-046 — FormDataPohon.validasiFile(file)
+### 8.5 Kelas LaporanPohon
+
+Algo-022 `simpanLaporan(dataLaporan)`:
 ```
-validasiFile(file):
-  IF file IS NULL
-    RETURN FALSE
-  ELSE
-    RETURN TRUE
-  END IF
+result <- DO QUERY Q-006
+RETURN result
 ```
 
-### Algo-047 — FormDataPohon.validasiData(dataInput)
+### 8.6 Kelas HalamanDataPohon
+
+Algo-023 `ambilDataPohon()`:
 ```
-validasiData(dataInput):
-  IF dataInput.namaPohon IS NULL OR dataInput.usia < 0 OR dataInput.serapanKarbon < 0
+dataPohonList <- DataPohonController.ambilDataPohon()
+IF dataPohonList IS NOT EMPTY
+    tampilkanData(dataPohonList)
+ELSE
+    tampilkanPesanError("Data pohon belum tersedia")
+END IF
+```
+
+Algo-024 `tampilkanData(dataPohonList)`:
+```
+DISPLAY dataPohonList
+```
+
+Algo-025 `tampilkanDaftar()`:
+```
+dataPohonList <- DataPohonController.ambilDataPohon()
+tampilkanData(dataPohonList)
+```
+
+Algo-026 `hapusData(idPohon)`:
+```
+result <- DataPohonController.hapusDataPohon(idPohon)
+RETURN result
+```
+
+Algo-027 `tampilkanPesanError(pesan)`:
+```
+DISPLAY pesan
+```
+
+### 8.7 Kelas DataPohon
+
+Algo-028 `cariDataPohon(kriteria)`:
+```
+IF kriteria IS NULL
+    result <- DO QUERY Q-007
+ELSE
+    result <- DO QUERY Q-008
+END IF
+RETURN result
+```
+
+Algo-029 `getDataPohon()`:
+```
+result <- DO QUERY Q-007
+RETURN result
+```
+
+Algo-030 `simpanData(dataPohon)`:
+```
+result <- DO QUERY Q-009
+RETURN result
+```
+
+Algo-031 `ubahData(dataPohon)`:
+```
+result <- DO QUERY Q-010
+RETURN result
+```
+
+Algo-032 `hapusData(idPohon)`:
+```
+result <- DO QUERY Q-011
+RETURN result
+```
+
+Algo-033 `simpanDataPohon(data)`:
+```
+result <- simpanData(data)
+RETURN result
+```
+
+Algo-034 `simpanFoto(file)`:
+```
+IF file IS NOT NULL
+    filePath <- simpan file ke local folder
+    RETURN filePath
+ELSE
+    RETURN "File foto tidak ditemukan"
+END IF
+```
+
+### 8.8 Kelas HalamanStatistik
+
+Algo-035 `ambilData()`:
+```
+dataStatistik <- StatistikController.ambilData()
+IF dataStatistik IS NOT EMPTY
+    tampilkanStatistik(dataStatistik)
+    tampilkanGrafik(dataStatistik)
+ELSE
+    tampilkanPesanError("Belum ada data penghijauan")
+END IF
+```
+
+Algo-036 `tampilkanStatistik(dataStatistik)`:
+```
+DISPLAY dataStatistik
+```
+
+Algo-037 `pilihPeriode(periode)`:
+```
+filterTerpilih <- periode
+dataStatistik <- StatistikController.terapkanFilter(filterTerpilih)
+perbaruiTampilan(dataStatistik)
+```
+
+Algo-038 `tampilkanGrafik(dataStatistik)`:
+```
+DISPLAY grafikStatistik
+```
+
+Algo-039 `perbaruiTampilan(dataStatistik)`:
+```
+tampilkanStatistik(dataStatistik)
+tampilkanGrafik(dataStatistik)
+```
+
+Algo-040 `tampilkanPesanError(pesan)`:
+```
+DISPLAY pesan
+```
+
+### 8.9 Kelas FormLaporanPenanaman
+
+Algo-041 `tampilkanForm()`:
+```
+DISPLAY form laporan penanaman
+```
+
+Algo-042 `kumpulkanDataInput(dataPenanaman)`:
+```
+RETURN dataPenanaman
+```
+
+Algo-043 `validasiData(dataPenanaman)`:
+```
+IF dataPenanaman.lokasi IS NULL OR dataPenanaman.jenisPohon IS NULL OR dataPenanaman.jumlahPohon <= 0
     RETURN FALSE
-  ELSE
+ELSE
     RETURN TRUE
-  END IF
+END IF
 ```
+
+Algo-044 `tampilkanStatus(status)`:
+```
+DISPLAY status
+```
+
+### 8.10 Kelas FormDataPohon
+
+Algo-045 `tampilkanForm()`:
+```
+DISPLAY form data pohon
+```
+
+Algo-046 `validasiFile(file)`:
+```
+IF file IS NULL
+    RETURN FALSE
+ELSE
+    RETURN TRUE
+END IF
+```
+
+Algo-047 `validasiData(dataInput)`:
+```
+IF dataInput.namaPohon IS NULL OR dataInput.usia < 0 OR dataInput.serapanKarbon < 0
+    RETURN FALSE
+ELSE
+    RETURN TRUE
+END IF
+```
+
+Algo-048 `prosesInputPohon(data)`:
+```
+IF validasiData(data) = TRUE THEN
+    result <- DataPohonController.prosesInputPohon(data)
+    tampilkanStatus(result)
+ELSE
+    tampilkanStatus("Data pohon tidak valid")
+END IF
+```
+
+Algo-049 `simpanDataPohon(data)`:
+```
+result <- DataPohonController.simpanDataPohon(data)
+tampilkanStatus(result)
+```
+
+Algo-050 `tampilkanStatus(status)`:
+```
+DISPLAY status
+```
+
+### 8.11 Kelas PenanamanController (Algo-051 s/d Algo-057)
+*Lihat Section 6.1*
+
+### 8.12 Kelas LaporanPohonController (Algo-058 s/d Algo-060)
+*Lihat Section 6.3*
+
+### 8.13 Kelas DataPohonController (Algo-061 s/d Algo-070)
+*Lihat Section 6.2*
+
+### 8.14 Kelas StatistikController (Algo-071 s/d Algo-076)
+*Lihat Section 6.4*
 
 ---
 
-## 10. USE CASE MAPPING
+## 9. USE CASE MAPPING
 
 | UC | Nama | Boundary | Controller | Entity |
 |---|---|---|---|---|
@@ -967,23 +1142,23 @@ validasiData(dataInput):
 
 ---
 
-## 11. SEQUENCE FLOWS
+## 10. SEQUENCE FLOWS
 
 ### UC01 — Normal
 ```
 User.pilihMenuPenanaman()
 → HalamanDataPenanaman.ambilDataPenanaman()
 → PenanamanController.ambilDataPenanaman()
-→ DataPenanaman.cariData() / getDataPenanaman()
-← dataPenanaman
-← dataPenanaman
+→ DataPenanaman.getDataPenanaman()
+← dataPenanamanList
+← dataPenanamanList
 → HalamanDataPenanaman.tampilkanData()
 ← User
 ```
 
 ### UC01 — Data Kosong
 ```
-... → DataPenanaman.cariData() → dataKosong
+→ DataPenanaman.getDataPenanaman() → dataKosong
 ← dataKosong → PenanamanController → HalamanDataPenanaman
 → HalamanDataPenanaman.tampilkanPesanError()
 ```
@@ -991,22 +1166,18 @@ User.pilihMenuPenanaman()
 ### UC02 — Normal
 ```
 User.isiLaporan() + User.unggahFoto()
-→ FormLaporanPohon.kumpulkanDataInput()
-User.kirimLaporan()
-→ FormLaporanPohon.validasiData()
+→ FormLaporanPohon.validasiData() → TRUE
 → FormLaporanPohon.prosesLaporan(dataInput, fileFoto)
 → LaporanPohonController.prosesLaporan(dataLaporan)
 → LaporanPohonController.hitungEstimasiKarbon()
 → LaporanPohon.simpanLaporan()
 ← statusSimpan
-← laporanBerhasil
 → FormLaporanPohon.tampilkanStatus()
 ```
 
 ### UC02 — Data Tidak Lengkap
 ```
-User.kirimLaporan()
-→ FormLaporanPohon.validasiData() → GAGAL
+→ FormLaporanPohon.validasiData() → FALSE
 → FormLaporanPohon.tampilkanStatus("Data laporan belum lengkap")
 ```
 
@@ -1015,14 +1186,8 @@ User.kirimLaporan()
 User.lihatDataPohon()
 → HalamanDataPohon.ambilDataPohon()
 → DataPohonController.ambilDataPohon()
-→ DataPohon.cariDataPohon() / getDataPohon()
+→ DataPohon.getDataPohon()
 ← daftarPohon
-→ HalamanDataPohon.tampilkanData()
-User.pilihDataPohon()
-→ HalamanDataPohon.ambilDetailPohon(idPohon)
-→ DataPohonController.ambilDetailPohon(idPohon)
-→ DataPohon.cariDataPohon(idPohon)
-← detailPohon
 → HalamanDataPohon.tampilkanData()
 ```
 
@@ -1048,7 +1213,6 @@ User.pilihFilterPeriode()
 → StatistikController.hitungStatistik()
 → StatistikController.teruskanKeView()
 → HalamanStatistik.perbaruiTampilan()
-→ tampilkan grafik
 ```
 
 ### UC05 — Normal
@@ -1056,11 +1220,10 @@ User.pilihFilterPeriode()
 User.pilihOpsiKelolaData()
 → FormLaporanPenanaman.tampilkanForm()
 User.isiDataPenanaman()
-→ FormLaporanPenanaman.simpanDataPenanaman(data)
-→ PenanamanController.validasiData()
+→ FormLaporanPenanaman.validasiData() → TRUE
+→ PenanamanController.simpanDataPenanaman(data)
 → DataPenanaman.simpanData() → status
 → FormLaporanPenanaman.tampilkanStatus("berhasil")
-← tampilkan pesan
 ```
 
 ### UC06 — Normal
@@ -1068,8 +1231,9 @@ User.isiDataPenanaman()
 → FormDataPohon.tampilkanForm()
 User.unggahFoto()
 User.isiDataPohon()
+→ FormDataPohon.validasiData() → TRUE
 → FormDataPohon.prosesInputPohon(data)
-→ DataPohonController.validasiData()
+→ DataPohonController.simpanDataPohon(data)
 → DataPohon.simpanFoto(file)
 → DataPohon.simpanDataPohon(data) → status
 → FormDataPohon.tampilkanStatus("berhasil"/"gagal")
@@ -1091,11 +1255,13 @@ User.isiDataPohon()
 
 ---
 
-## 12. CLASS DIAGRAM DETAIL
+## 11. CLASS DIAGRAM DETAIL
 
 ### Boundary Layer
 ```
-HalamanStatistik
+HalamanStatistik (C-08)
+  - grafikStatistik: Object
+  - filterTerpilih: String
   + ambilData(): void
   + tampilkanStatistik(data: Object): void
   + pilihPeriode(periode: String): void
@@ -1103,24 +1269,29 @@ HalamanStatistik
   + perbaruiTampilan(data: Object): void
   + tampilkanPesanError(pesan: String): void
 
-HalamanDataPohon
+HalamanDataPohon (C-06)
+  - daftarPohon: List
+  - filterData: String
   + ambilDataPohon(): void
   + tampilkanData(dataPohonList: List): void
   + tampilkanDaftar(): void
   + hapusData(idPohon: String): void
   + tampilkanPesanError(pesan: String): void
 
-HalamanDataPenanaman
+HalamanDataPenanaman (C-02)
   + ambilDataPenanaman(): void
   + tampilkanData(data: List): void
   + tampilkanPesanError(pesan: String): void
 
-FormLaporanPohon
+FormLaporanPohon (C-04)
+  - fileFoto: String
+  - dataInput: Object
   + validasiData(dataInput: Object): boolean
   + prosesLaporan(dataInput: Object, fileFoto: File): void
   + tampilkanStatus(status: String): void
 
-FormDataPohon
+FormDataPohon (C-10)
+  - dataInput: Object
   + tampilkanForm(): void
   + validasiFile(file: File): boolean
   + validasiData(dataInput: Object): boolean
@@ -1128,7 +1299,7 @@ FormDataPohon
   + simpanDataPohon(data: Object): void
   + tampilkanStatus(status: String): void
 
-FormLaporanPenanaman
+FormLaporanPenanaman (C-09)
   + tampilkanForm(): void
   + kumpulkanDataInput(data: DataPenanaman): void
   + validasiData(data: DataPenanaman): boolean
@@ -1137,7 +1308,7 @@ FormLaporanPenanaman
 
 ### Controller Layer
 ```
-PenanamanController
+PenanamanController (C-11)
   + cariData(idPenanaman: String): void
   + ambilDataPenanaman(): void
   + simpanDataPenanaman(data: DataPenanaman): void
@@ -1146,7 +1317,7 @@ PenanamanController
   + hitungEstimasiKarbon(data: DataPenanaman): float
   + teruskanKeView(result: Object): void
 
-DataPohonController
+DataPohonController (C-13)
   + cariDataPohon(kriteria: String): void
   + ambilDetailPohon(idPohon: String): void
   + ambilDataPohon(): void
@@ -1158,12 +1329,12 @@ DataPohonController
   + validasiData(data: Object): boolean
   + tampilkanStatus(status: String): void
 
-LaporanPohonController
+LaporanPohonController (C-12)
   + prosesLaporan(dataLaporan: LaporanPohon): void
   + hitungEstimasiKarbon(data: LaporanPohon): float
   + simpanLaporan(dataLaporan: LaporanPohon): void
 
-StatistikController
+StatistikController (C-14)
   + hitungStatistik(dp: DataPohon, dpt: DataPenanaman): void
   + getDataPohon(): void
   + getDataPenanaman(): void
@@ -1174,7 +1345,7 @@ StatistikController
 
 ### Entity Layer
 ```
-User
+User (C-01)
   - idUser: String
   - nama: String
   - role: String
@@ -1189,7 +1360,7 @@ User
   + simpanData(data: Object, jenisData: String): void
   + konfirmasiHapus(idData: String): String
 
-DataPohon
+DataPohon (C-07)
   - idPohon: String
   - namaPohon: String
   - usia: int
@@ -1204,7 +1375,7 @@ DataPohon
   + simpanDataPohon(data: Object): void
   + simpanFoto(file: File): void
 
-DataPenanaman
+DataPenanaman (C-03)
   - idPenanaman: String
   - lokasi: String
   - jenisPohon: String
@@ -1217,7 +1388,7 @@ DataPenanaman
   + hapusData(idPenanaman: String): void
   + getDataPenanaman(): void
 
-LaporanPohon
+LaporanPohon (C-05)
   - idLaporan: String
   - kondisi: String
   - lokasi: String
@@ -1228,7 +1399,7 @@ LaporanPohon
 
 ---
 
-## 13. UTIL CLASSES
+## 12. UTIL CLASSES
 
 ### DBConnection.java
 ```java
@@ -1249,31 +1420,28 @@ class FileManager {
 
 ---
 
-## 14. TRACEABILITY MATRIX
+## 13. TRACEABILITY MATRIX (DPPLOO-01)
 
-| Kelas Analisis | Kelas Perancangan | Use Case |
-|---|---|---|
-| C-01 User | User | UC01–UC08 |
-| C-02 HalamanDataPenanaman | HalamanDataPenanaman | UC01, UC05 |
-| C-03 DataPenanaman | DataPenanaman | UC01, UC04, UC05, UC08 |
-| C-03 DataPenanaman | PenanamanRepository | UC01, UC04, UC05, UC08 |
-| C-04 FormLaporanPohon | FormLaporanPohon | UC02 |
-| C-05 LaporanPohon | LaporanPohon | UC02 |
-| C-05 LaporanPohon | LaporanRepository | UC02 |
-| C-06 HalamanDataPohon | HalamanDataPohon | UC03, UC07 |
-| C-07 DataPohon | DataPohon | UC03, UC04, UC06, UC07, UC08 |
-| C-07 DataPohon | PohonRepository | UC03, UC04, UC06, UC07, UC08 |
-| C-08 HalamanStatistik | HalamanStatistik | UC04, UC08 |
-| C-09 FormLaporanPenanaman | FormLaporanPenanaman | UC05 |
-| C-10 FormDataPohon | FormDataPohon | UC06, UC07 |
-| C-11 PenanamanController | PenanamanController | UC01, UC05 |
-| C-12 LaporanPohonController | LaporanPohonController | UC02 |
-| C-13 DataPohonController | DataPohonController | UC03, UC06, UC07 |
-| C-14 StatistikController | StatistikController | UC04, UC08 |
+| No | Kelas Perancangan | Kelas Analisis | Use Case |
+|---|---|---|---|
+| 1 | User | C-01 User | UC01–UC08 |
+| 2 | HalamanDataPenanaman | C-02 HalamanDataPenanaman | UC01, UC05 |
+| 3 | DataPenanaman | C-03 DataPenanaman | UC01, UC04, UC05, UC08 |
+| 4 | FormLaporanPohon | C-04 FormLaporanPohon | UC02 |
+| 5 | LaporanPohon | C-05 LaporanPohon | UC02 |
+| 6 | HalamanDataPohon | C-06 HalamanDataPohon | UC03, UC07 |
+| 7 | DataPohon | C-07 DataPohon | UC03, UC04, UC06, UC07, UC08 |
+| 8 | HalamanStatistik | C-08 HalamanStatistik | UC04, UC08 |
+| 9 | FormLaporanPenanaman | C-09 FormLaporanPenanaman | UC05 |
+| 10 | FormDataPohon | C-10 FormDataPohon | UC06, UC07 |
+| 11 | PenanamanController | C-11 PenanamanController | UC01, UC05 |
+| 12 | LaporanPohonController | C-12 LaporanPohonController | UC02 |
+| 13 | DataPohonController | C-13 DataPohonController | UC03, UC06, UC07 |
+| 14 | StatistikController | C-14 StatistikController | UC04, UC08 |
 
 ---
 
-## 15. NOTES & CONSTRAINTS
+## 14. NOTES & CONSTRAINTS
 
 1. **Aplikasi desktop single-user** — tidak ada authentication kompleks.
 2. **Foto pohon** disimpan di local folder, DB hanya menyimpan path.
@@ -1282,7 +1450,7 @@ class FileManager {
 5. **JavaFX Charts** untuk Line Chart dan Bar Chart di HalamanStatistik.
 6. Semua query menggunakan **PreparedStatement**.
 7. `id_*` fields menggunakan **UUID**.
-8. **Controller langsung panggil Entity** — PDF tidak menyebut Repository layer secara eksplisit.
+8. **Controller langsung panggil Entity** — DPPLOO-01 TIDAK memiliki Repository layer. Arsitektur murni BCE.
 9. **`DataPohon.cariDataPohon(jenisPohon)`** cari by nama pohon (bukan ID).
 10. **Q-008**: `WHERE id_pohon = ? OR nama_pohon ILIKE ?` — satu query untuk dua kebutuhan.
 11. **`FormLaporanPenanaman`** boundary terpisah untuk input penanaman. **`HalamanDataPenanaman`** hanya display list.
@@ -1292,3 +1460,5 @@ class FileManager {
     - PenanamanController: jumlahPohon * serapanKarbon
 14. **Status/kondisi laporan**: `"ditebang"`, `"rusak"`, `"mati"` (lowercase).
 15. **UI/estetika/warna TIDAK DIUBAH** — color palette, spacing, layout tetap sama.
+16. **Tidak ada Repository layer** — Entity methods langsung menjalankan query (Q-001 s/d Q-013).
+17. **Bahasa di DPPLOO-01 section 2.1 tertulis "JavaScript"** — ini typo di dokumen asli, actual implementation adalah **Java + JavaFX**.

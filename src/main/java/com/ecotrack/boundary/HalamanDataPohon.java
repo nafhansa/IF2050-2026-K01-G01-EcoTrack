@@ -1,6 +1,6 @@
 package com.ecotrack.boundary;
 
-import com.ecotrack.controller.PohonController;
+import com.ecotrack.controller.DataPohonController;
 import com.ecotrack.entity.DataPohon;
 import com.ecotrack.util.UIConstants;
 import javafx.geometry.Insets;
@@ -11,11 +11,14 @@ import java.util.List;
 
 public class HalamanDataPohon extends BorderPane {
 
-    private final PohonController controller;
+    private List<DataPohon> daftarPohon;
+    private String filterData;
+
+    private final DataPohonController controller;
     private TableView<DataPohon> tabelPohon;
     private VBox contentArea;
 
-    public HalamanDataPohon(PohonController controller) {
+    public HalamanDataPohon(DataPohonController controller) {
         this.controller = controller;
         initialize();
     }
@@ -23,7 +26,6 @@ public class HalamanDataPohon extends BorderPane {
     private void initialize() {
         setStyle("-fx-background-color: " + UIConstants.CONTENT_BG);
 
-        // Header
         VBox header = new VBox(8);
         header.setPadding(new Insets(UIConstants.PADDING_CONTENT));
 
@@ -44,7 +46,6 @@ public class HalamanDataPohon extends BorderPane {
         header.getChildren().addAll(headerRow, subtitle);
         setTop(header);
 
-        // Tabel
         contentArea = new VBox(UIConstants.GAP_CARD);
         contentArea.setPadding(new Insets(0, UIConstants.PADDING_CONTENT, UIConstants.PADDING_CONTENT, UIConstants.PADDING_CONTENT));
 
@@ -54,7 +55,7 @@ public class HalamanDataPohon extends BorderPane {
         contentArea.getChildren().add(tabelPohon);
         setCenter(contentArea);
 
-        tampilkanDaftarPohon();
+        ambilDataPohon();
     }
 
     private void setupTabel() {
@@ -65,7 +66,7 @@ public class HalamanDataPohon extends BorderPane {
         colUsia.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue().getUsia()));
 
         TableColumn<DataPohon, Float> colSerapan = new TableColumn<>("SERAPAN KARBON (KG/TAHUN)");
-        colSerapan.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue().getKapasitasSerapanKarbon()));
+        colSerapan.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue().getSerapanKarbon()));
 
         TableColumn<DataPohon, Void> colAksi = new TableColumn<>("AKSI");
         colAksi.setCellFactory(param -> new TableCell<>() {
@@ -77,12 +78,10 @@ public class HalamanDataPohon extends BorderPane {
                 btnDelete.setStyle("-fx-text-fill: " + UIConstants.ACCENT_RED);
                 btnEdit.setOnAction(e -> {
                     DataPohon data = getTableView().getItems().get(getIndex());
-                    // Edit action
                 });
                 btnDelete.setOnAction(e -> {
                     DataPohon data = getTableView().getItems().get(getIndex());
-                    controller.hapusDataPohon(data.getIdPohon());
-                    tampilkanDaftarPohon();
+                    hapusData(data.getIdPohon());
                 });
             }
 
@@ -101,21 +100,41 @@ public class HalamanDataPohon extends BorderPane {
         tabelPohon.getColumns().addAll(colNama, colUsia, colSerapan, colAksi);
     }
 
-    public void tampilkanDaftarPohon() {
-        List<DataPohon> data = controller.getDataPohon();
-        tabelPohon.getItems().setAll(data);
+    public void ambilDataPohon() {
+        // Algo-023
+        List<DataPohon> dataPohonList = controller.ambilDataPohon();
+        if (dataPohonList != null && !dataPohonList.isEmpty()) {
+            tampilkanData(dataPohonList);
+        } else {
+            tampilkanPesanError("Data pohon belum tersedia");
+        }
     }
 
-    public void tampilkanDetailPohon(String idPohon) {
-        DataPohon detail = controller.getDetailPohon(idPohon);
-        // Show detail
+    public void tampilkanData(List<DataPohon> dataPohonList) {
+        // Algo-024
+        daftarPohon = dataPohonList;
+        tabelPohon.getItems().setAll(dataPohonList);
+    }
+
+    public void tampilkanDaftar() {
+        // Algo-025
+        List<DataPohon> dataPohonList = controller.ambilDataPohon();
+        tampilkanData(dataPohonList);
+    }
+
+    public void hapusData(String idPohon) {
+        // Algo-026
+        controller.hapusDataPohon(idPohon);
+        ambilDataPohon();
+    }
+
+    public void tampilkanPesanError(String pesan) {
+        // Algo-027
+        Alert alert = new Alert(Alert.AlertType.WARNING, pesan, ButtonType.OK);
+        alert.showAndWait();
     }
 
     public void tampilkanModalTambah() {
         // Show modal untuk tambah pohon
-    }
-
-    public void tutupModal() {
-        // Close modal
     }
 }

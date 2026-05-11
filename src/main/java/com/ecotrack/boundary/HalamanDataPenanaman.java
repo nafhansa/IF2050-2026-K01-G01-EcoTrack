@@ -7,7 +7,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
-import java.time.LocalDate;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 public class HalamanDataPenanaman extends BorderPane {
@@ -24,7 +24,6 @@ public class HalamanDataPenanaman extends BorderPane {
     private void initialize() {
         setStyle("-fx-background-color: " + UIConstants.CONTENT_BG);
 
-        // Header
         VBox header = new VBox(8);
         header.setPadding(new Insets(UIConstants.PADDING_CONTENT));
 
@@ -45,7 +44,6 @@ public class HalamanDataPenanaman extends BorderPane {
         header.getChildren().addAll(headerRow, subtitle);
         setTop(header);
 
-        // Content
         contentArea = new VBox(UIConstants.GAP_CARD);
         contentArea.setPadding(new Insets(0, UIConstants.PADDING_CONTENT, UIConstants.PADDING_CONTENT, UIConstants.PADDING_CONTENT));
 
@@ -58,52 +56,55 @@ public class HalamanDataPenanaman extends BorderPane {
         contentArea.getChildren().addAll(sectionTitle, tabelPenanaman);
         setCenter(contentArea);
 
-        tampilkanDaftarPenanaman();
+        ambilDataPenanaman();
     }
 
     private void setupTabel() {
         TableColumn<DataPenanaman, String> colTanggal = new TableColumn<>("TANGGAL");
-        colTanggal.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(
-            data.getValue().getTanggalPenanaman().toString()
-        ));
+        colTanggal.setCellValueFactory(data -> {
+            if (data.getValue().getTanggal() != null) {
+                return new javafx.beans.property.SimpleStringProperty(new SimpleDateFormat("dd/MM/yyyy").format(data.getValue().getTanggal()));
+            }
+            return new javafx.beans.property.SimpleStringProperty("");
+        });
 
         TableColumn<DataPenanaman, String> colLokasi = new TableColumn<>("LOKASI");
-        colLokasi.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(
-            data.getValue().getLokasi()
-        ));
+        colLokasi.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getLokasi()));
 
         TableColumn<DataPenanaman, String> colJenis = new TableColumn<>("JENIS POHON");
-        colJenis.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(
-            data.getValue().getJenisPohon()
-        ));
+        colJenis.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getJenisPohon()));
 
         TableColumn<DataPenanaman, Integer> colJumlah = new TableColumn<>("JUMLAH");
-        colJumlah.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(
-            data.getValue().getJumlahPohon()
-        ));
+        colJumlah.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue().getJumlahPohon()));
 
         TableColumn<DataPenanaman, Float> colSerapan = new TableColumn<>("EST. SERAPAN (KG/THN)");
-        colSerapan.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(
-            data.getValue().getEstimasiKarbon()
-        ));
+        colSerapan.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue().getEstimasiKarbon()));
 
         tabelPenanaman.getColumns().addAll(colTanggal, colLokasi, colJenis, colJumlah, colSerapan);
     }
 
-    public void tampilkanDaftarPenanaman() {
-        List<DataPenanaman> data = controller.getDataPenanaman();
+    public void ambilDataPenanaman() {
+        // Algo-011
+        List<DataPenanaman> dataPenanamanList = controller.ambilDataPenanaman();
+        if (dataPenanamanList != null && !dataPenanamanList.isEmpty()) {
+            tampilkanData(dataPenanamanList);
+        } else {
+            tampilkanPesanError("Data penanaman belum tersedia");
+        }
+    }
+
+    public void tampilkanData(List<DataPenanaman> data) {
+        // Algo-012
         tabelPenanaman.getItems().setAll(data);
+    }
+
+    public void tampilkanPesanError(String pesan) {
+        // Algo-013
+        Alert alert = new Alert(Alert.AlertType.WARNING, pesan, ButtonType.OK);
+        alert.showAndWait();
     }
 
     public void tampilkanFormInput() {
         // Show modal form input penanaman
-    }
-
-    public void tutupModal() {
-        // Close modal
-    }
-
-    public void populateDropdownJenisPohon() {
-        // Load jenis pohon dari PohonRepository
     }
 }

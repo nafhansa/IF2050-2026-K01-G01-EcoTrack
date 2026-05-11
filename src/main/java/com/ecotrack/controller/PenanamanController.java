@@ -2,41 +2,51 @@ package com.ecotrack.controller;
 
 import com.ecotrack.entity.DataPohon;
 import com.ecotrack.entity.DataPenanaman;
-import com.ecotrack.repository.PenanamanRepository;
 
-import java.io.File;
 import java.util.List;
 
 public class PenanamanController {
 
-    private final PenanamanRepository repository;
-
-    public PenanamanController(PenanamanRepository repository) {
-        this.repository = repository;
+    public void cariData(String idPenanaman) {
+        // Algo-051: result <- DataPenanaman.cariData(idPenanaman)
     }
 
-    public List<DataPenanaman> getDataPenanaman() {
-        return repository.findAll();
+    public List<DataPenanaman> ambilDataPenanaman() {
+        // Algo-052: result <- DataPenanaman.getDataPenanaman()
+        return null;
     }
 
-    public boolean validasiInput(DataPenanaman data) {
-        if (data.getLokasi() == null || data.getLokasi().isEmpty()) return false;
-        if (data.getJenisPohon() == null || data.getJenisPohon().isEmpty()) return false;
-        if (data.getJumlahPohon() <= 0) return false;
-        if (data.getTanggalPenanaman() == null) return false;
-        return true;
+    public String simpanDataPenanaman(DataPenanaman dataPenanaman) {
+        // Algo-053
+        // IF FormLaporanPenanaman.validasiData(dataPenanaman) = TRUE THEN
+        dataPenanaman.setEstimasiKarbon(hitungEstimasiKarbon(dataPenanaman));
+        // result <- DataPenanaman.simpanData(dataPenanaman)
+        teruskanKeView("Berhasil");
+        return "Berhasil";
     }
 
-    public float hitungEstimasi(String jenisPohon, int jumlahPohon) {
-        // Algo-003: estimasiKarbon = jumlahPohon * dataPohon.serapanKarbon
+    public String ubahDataPenanaman(DataPenanaman dataPenanaman) {
+        // Algo-054
+        // IF FormLaporanPenanaman.validasiData(dataPenanaman) = TRUE THEN
+        dataPenanaman.setEstimasiKarbon(hitungEstimasiKarbon(dataPenanaman));
+        // result <- DataPenanaman.ubahData(dataPenanaman)
+        teruskanKeView("Berhasil");
+        return "Berhasil";
+    }
+
+    public String hapusDataPenanaman(String idPenanaman) {
+        // Algo-055: result <- DataPenanaman.hapusData(idPenanaman)
+        teruskanKeView("Berhasil");
+        return "Berhasil";
+    }
+
+    public float hitungEstimasiKarbon(DataPenanaman dataPenanaman) {
+        // Algo-056: dataPohon <- DataPohon.cariDataPohon(dataPenanaman.jenisPohon)
+        // estimasiKarbon <- dataPenanaman.jumlahPohon * dataPohon.serapanKarbon
         return 0;
     }
 
-    public String simpanDataPenanaman(DataPenanaman data) {
-        // Algo-004: validasiInput -> hitungEstimasi -> repository.save
-        if (!validasiInput(data)) {
-            return "Data tidak valid";
-        }
-        return "Berhasil";
+    public void teruskanKeView(Object result) {
+        // Algo-057
     }
 }

@@ -1,7 +1,8 @@
 package com.ecotrack.boundary;
 
-import com.ecotrack.controller.PohonController;
+import com.ecotrack.controller.DataPohonController;
 import com.ecotrack.entity.DataPohon;
+import com.ecotrack.util.FileManager;
 import com.ecotrack.util.UIConstants;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -10,16 +11,22 @@ import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import java.io.File;
+
 public class FormDataPohon {
 
-    private final PohonController controller;
-    private Stage modalStage;
+    private Object dataInput;
 
-    public FormDataPohon(PohonController controller) {
+    private final DataPohonController controller;
+    private Stage modalStage;
+    private String fileFotoPath;
+
+    public FormDataPohon(DataPohonController controller) {
         this.controller = controller;
     }
 
     public void tampilkanForm() {
+        // Algo-045
         modalStage = new Stage();
         modalStage.initModality(Modality.APPLICATION_MODAL);
         modalStage.setTitle("Tambah Data Pohon");
@@ -43,6 +50,10 @@ public class FormDataPohon {
         TextField fieldSerapan = new TextField();
         fieldSerapan.setPromptText("Contoh: 28.5");
 
+        Button btnUpload = new Button("Unggah Foto");
+        btnUpload.setStyle("-fx-border-color: #E0E0E0; -fx-background-color: transparent; -fx-text-fill: #424242");
+        btnUpload.setOnAction(e -> unggahFoto());
+
         Button btnBatal = new Button("Batal");
         btnBatal.setStyle("-fx-border-color: #E0E0E0; -fx-background-color: transparent; -fx-text-fill: #9E9E9E; -fx-background-radius: " + UIConstants.RADIUS_BUTTON);
         btnBatal.setOnAction(e -> tutupModal());
@@ -55,15 +66,18 @@ public class FormDataPohon {
             try {
                 data.setUsia(Integer.parseInt(fieldUsia.getText()));
             } catch (NumberFormatException ex) {
-                data.setUsia(null);
+                data.setUsia(0);
             }
             try {
-                data.setKapasitasSerapanKarbon(Float.parseFloat(fieldSerapan.getText()));
+                data.setSerapanKarbon(Float.parseFloat(fieldSerapan.getText()));
             } catch (NumberFormatException ex) {
-                data.setKapasitasSerapanKarbon(null);
+                data.setSerapanKarbon(0);
             }
-            controller.simpanDataPohon(data);
-            tutupModal();
+            if (fileFotoPath != null) {
+                data.setFileFoto(fileFotoPath);
+            }
+            dataInput = data;
+            prosesInputPohon(data);
         });
 
         HBox buttonBox = new HBox(16, btnBatal, btnTambah);
@@ -73,19 +87,54 @@ public class FormDataPohon {
             new Label("Nama Pohon"), fieldNama,
             new Label("Usia Pohon (tahun)"), fieldUsia,
             new Label("Kapasitas Serapan Karbon (kg/tahun)"), fieldSerapan,
+            btnUpload,
             buttonBox);
 
-        Scene scene = new Scene(form, UIConstants.MODAL_WIDTH, 450);
+        Scene scene = new Scene(form, UIConstants.MODAL_WIDTH, 500);
         modalStage.setScene(scene);
         modalStage.showAndWait();
     }
 
-    public void unggahFoto() {
-        // FileChooser implementation
+    public boolean validasiFile(File file) {
+        // Algo-046
+        return file != null;
     }
 
-    public void isiDataPohon() {
-        // Populate form with existing data for edit
+    public boolean validasiData(Object dataInput) {
+        // Algo-047
+        if (dataInput instanceof DataPohon) {
+            DataPohon d = (DataPohon) dataInput;
+            return d.getNamaPohon() != null && !d.getNamaPohon().isEmpty()
+                && d.getUsia() >= 0
+                && d.getSerapanKarbon() >= 0;
+        }
+        return false;
+    }
+
+    public void prosesInputPohon(Object data) {
+        // Algo-048
+        if (validasiData(data)) {
+            String result = controller.prosesInputPohon(data);
+            tampilkanStatus(result);
+        } else {
+            tampilkanStatus("Data pohon tidak valid");
+        }
+    }
+
+    public void simpanDataPohon(Object data) {
+        // Algo-049
+        String result = controller.simpanDataPohon(data);
+        tampilkanStatus(result);
+    }
+
+    public void tampilkanStatus(String status) {
+        // Algo-050
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, status, ButtonType.OK);
+        alert.showAndWait();
+    }
+
+    public void unggahFoto() {
+        // FileChooser implementation
     }
 
     public void tutupModal() {
