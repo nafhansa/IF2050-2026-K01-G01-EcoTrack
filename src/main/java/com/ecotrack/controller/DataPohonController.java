@@ -4,6 +4,7 @@ import com.ecotrack.entity.DataPohon;
 import com.ecotrack.util.FileManager;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DataPohonController {
@@ -18,7 +19,7 @@ public class DataPohonController {
 
     public List<DataPohon> ambilDataPohon() {
         // Algo-063: result <- DataPohon.getDataPohon()
-        return null;
+        return new ArrayList<>();
     }
 
     public String prosesInputPohon(Object data) {

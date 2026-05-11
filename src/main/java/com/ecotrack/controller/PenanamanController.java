@@ -3,6 +3,7 @@ package com.ecotrack.controller;
 import com.ecotrack.entity.DataPohon;
 import com.ecotrack.entity.DataPenanaman;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PenanamanController {
@@ -13,7 +14,7 @@ public class PenanamanController {
 
     public List<DataPenanaman> ambilDataPenanaman() {
         // Algo-052: result <- DataPenanaman.getDataPenanaman()
-        return null;
+        return new ArrayList<>();
     }
 
     public String simpanDataPenanaman(DataPenanaman dataPenanaman) {
