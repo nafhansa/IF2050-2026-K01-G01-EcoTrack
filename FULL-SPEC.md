@@ -1,6 +1,7 @@
 # FULL-SPEC.md — EcoTrack
-> **Dokumen DPPL asli: 51 halaman**  
-> Halaman efektif (konten teknis): ~35 halaman (sisanya cover, daftar isi, daftar gambar, footer boilerplate)
+> **Sumber kebenaran: PDF Final DPPLOO-01 (51 halaman)**
+> **Tujuan: Source code harus PERSIS mengikuti PDF Final**
+> **UI/estetika/warna: TIDAK DIUBAH**
 
 ---
 
@@ -16,28 +17,30 @@ PHASE 1 — FONDASI (Mulai di sini)
   Step 4. Buat semua Entity class (User, DataPohon, DataPenanaman, LaporanPohon)
 
 PHASE 2 — DATA LAYER
-  Step 5. Buat PohonRepository.java     (Q-005 s/d Q-010)
-  Step 6. Buat PenanamanRepository.java (Q-001 s/d Q-004)
-  Step 7. Buat LaporanRepository.java   (Q-011, Q-012)
+  Step 5. Buat PohonRepository.java     (Q-007 s/d Q-011)
+  Step 6. Buat PenanamanRepository.java (Q-001 s/d Q-005)
+  Step 7. Buat LaporanRepository.java   (Q-006)
   Step 8. Buat FileManager.java         (simpan/ambil foto lokal)
 
 PHASE 3 — BUSINESS LOGIC
-  Step 9.  Buat PohonController.java          (CRUD pohon + validasi + foto)
-  Step 10. Buat PenanamanController.java      (CRUD penanaman + hitungEstimasi)
-  Step 11. Buat LaporanPohonController.java   (prosesLaporan + hitungKapasitasBaru)
-  Step 12. Buat StatistikController.java      (hitungStatistikTotal + ambilDataVisualisasi)
+  Step 9.  Buat DataPohonController.java          (CRUD pohon + validasi + foto)
+  Step 10. Buat PenanamanController.java      (CRUD penanaman + hitungEstimasiKarbon)
+  Step 11. Buat LaporanPohonController.java   (prosesLaporan + hitungEstimasiKarbon)
+  Step 12. Buat StatistikController.java      (hitungStatistik + terapkanFilter)
 
 PHASE 4 — UI (JavaFX)
   Step 13. Buat HalamanDataPohon.fxml + HalamanDataPohon.java       (UC03, UC07)
   Step 14. Buat HalamanDataPenanaman.fxml + HalamanDataPenanaman.java (UC01, UC05)
   Step 15. Buat FormLaporanPohon.fxml + FormLaporanPohon.java        (UC02)
   Step 16. Buat HalamanStatistik.fxml + HalamanStatistik.java        (UC04, UC08)
-  Step 17. Buat Main.java + navigasi sidebar (User.pilihMenu)
+  Step 17. Buat FormLaporanPenanaman.java (UC05)
+  Step 18. Buat FormDataPohon.java (UC06, UC07)
+  Step 19. Buat Main.java + navigasi sidebar (User method baru)
 ```
 
-### Docker PostgreSQL Setup (biar semua tim pakai versi yang sama)
+### Docker PostgreSQL Setup
 
-**Struktur file yang perlu dibuat di root project:**
+**Struktur file:**
 ```
 ecotrack/
 ├── docker-compose.yml
@@ -72,7 +75,7 @@ volumes:
   ecotrack_data:
 ```
 
-#### `db/init.sql` — auto-run saat container pertama kali start
+#### `db/init.sql`
 ```sql
 -- =============================================
 -- ECOTRACK DATABASE INIT SCRIPT
@@ -90,9 +93,8 @@ CREATE TABLE IF NOT EXISTS data_pohon (
     nama_pohon               VARCHAR(100) NOT NULL,
     usia                     INT,
     lokasi                   VARCHAR(200),
-    kapasitas_serapan_karbon FLOAT,
-    status                   VARCHAR(50),
-    file_foto_path           VARCHAR(500),
+    serapan_karbon           FLOAT,
+    file_foto                VARCHAR(500),
     created_at               TIMESTAMP DEFAULT NOW(),
     updated_at               TIMESTAMP DEFAULT NOW()
 );
@@ -104,7 +106,7 @@ CREATE TABLE IF NOT EXISTS data_penanaman (
     lokasi            VARCHAR(200) NOT NULL,
     jenis_pohon       VARCHAR(100) NOT NULL,
     jumlah_pohon      INT          NOT NULL,
-    tanggal_penanaman DATE         NOT NULL,
+    tanggal           DATE         NOT NULL,
     estimasi_karbon   FLOAT,
     created_at        TIMESTAMP DEFAULT NOW(),
     updated_at        TIMESTAMP DEFAULT NOW()
@@ -116,19 +118,18 @@ CREATE TABLE IF NOT EXISTS laporan_pohon (
     id_pohon        VARCHAR(36)  REFERENCES data_pohon(id_pohon),
     kondisi         VARCHAR(50)  NOT NULL,
     lokasi          VARCHAR(200) NOT NULL,
-    file_foto_path  VARCHAR(500),
+    file_foto       VARCHAR(500),
     estimasi_karbon FLOAT,
     tanggal_laporan DATE         NOT NULL,
     created_at      TIMESTAMP DEFAULT NOW()
 );
 
--- Seed user awal (opsional)
 INSERT INTO "user" (id_user, nama, role)
 VALUES ('user-001', 'Admin EcoTrack', 'admin')
 ON CONFLICT DO NOTHING;
 ```
 
-#### `.env` — simpan credentials (JANGAN di-commit ke Git)
+#### `.env`
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -146,29 +147,6 @@ target/
 *.iml
 *.log
 ```
-
-#### Cara pakai (jalankan sekali, semua teman tinggal clone + docker compose up):
-```bash
-# Start DB (background)
-docker compose up -d
-
-# Cek apakah container jalan
-docker compose ps
-
-# Lihat log kalau ada error
-docker compose logs ecotrack-db
-
-# Stop DB
-docker compose down
-
-# Reset total (hapus semua data)
-docker compose down -v
-```
-
-> **Catatan untuk tim:** `init.sql` hanya dieksekusi sekali saat volume belum ada.  
-> Kalau mau reset schema, jalankan `docker compose down -v` dulu baru `docker compose up -d`.
-
----
 
 #### `DBConnection.java`
 ```java
@@ -199,24 +177,19 @@ public class DBConnection {
 }
 ```
 
-#### `pom.xml` — dependency wajib (Maven)
+#### `pom.xml`
 ```xml
 <dependencies>
-    <!-- PostgreSQL JDBC Driver -->
     <dependency>
         <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>
         <version>42.7.3</version>
     </dependency>
-
-    <!-- JavaFX Controls -->
     <dependency>
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-controls</artifactId>
         <version>21.0.3</version>
     </dependency>
-
-    <!-- JavaFX FXML -->
     <dependency>
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-fxml</artifactId>
@@ -227,25 +200,8 @@ public class DBConnection {
 
 ---
 
-### Kenapa urutan ini?
-- Entity tidak bergantung apa-apa → paling aman dibuat duluan
-- Repository butuh Entity + DBConnection → harus setelah Phase 1
-- Controller butuh Repository → harus setelah Phase 2
-- UI butuh Controller → harus paling akhir
-- **Jangan mulai dari UI dulu** — bikin debugging jadi jauh lebih susah
-
-### Page asli DPPL yang paling relevan per phase:
-| Phase | Halaman DPPL |
-|---|---|
-| Phase 1 (Fondasi) | Hal. 9–10 (arsitektur), Hal. 50 (schema DB) |
-| Phase 2 (Repository) | Hal. 35–41 (Query Q-001 s/d Q-012) |
-| Phase 3 (Controller) | Hal. 33–43 (Algoritma + Query) |
-| Phase 4 (UI) | Hal. 44–49 (Perancangan Antarmuka) |
-
----
-
-> Aplikasi Manajemen Pendataan Pohon dan Penghijauan Lingkungan  
-> Bahasa: **Java** | UI: **JavaFX** | DB: **PostgreSQL** | Storage: **Local File System**  
+> Aplikasi Manajemen Pendataan Pohon dan Penghijauan Lingkungan
+> Bahasa: **Java** | UI: **JavaFX** | DB: **PostgreSQL** | Storage: **Local File System**
 > Arsitektur: **Desktop Single-User (Windows)** | Pattern: **Boundary-Controller-Entity (BCE)**
 
 ---
@@ -258,7 +214,7 @@ public class DBConnection {
 | UI Framework | JavaFX |
 | Database | PostgreSQL |
 | DB Driver | JDBC (PostgreSQL Driver) |
-| File Storage | Local Folder (foto pohon, ekspor laporan) |
+| File Storage | Local Folder |
 | Build Tool | Maven atau Gradle |
 | IDE | Visual Studio Code / IntelliJ |
 | VCS | Git / GitHub |
@@ -273,14 +229,14 @@ public class DBConnection {
         ├─► [Pencatatan Penanaman]
         ├─► [Pencatatan Data Pohon]
         ├─► [Pencatatan Kondisi Pohon]
-        ├─► [Perhitungan Serapan Karbon]  ◄─ dipicu oleh Penanaman & Kondisi Pohon
+        ├─► [Perhitungan Serapan Karbon]
         ├─► [Statistik dan Rekapitulasi]
         └─► [Laporan Berkala]
-              ├─► [PostgreSQL]           ← data terstruktur
-              └─► [Local File System]    ← foto pohon, ekspor laporan
+              ├─► [PostgreSQL]
+              └─► [Local File System]
 ```
 
-### Package Structure (Java)
+### Package Structure
 ```
 com.ecotrack/
 ├── Main.java
@@ -289,10 +245,11 @@ com.ecotrack/
 │   ├── HalamanDataPohon.java
 │   ├── HalamanDataPenanaman.java
 │   ├── FormLaporanPohon.java
-│   └── FormDataPohon.java
+│   ├── FormDataPohon.java
+│   └── FormLaporanPenanaman.java
 ├── controller/
 │   ├── StatistikController.java
-│   ├── PohonController.java
+│   ├── DataPohonController.java
 │   ├── PenanamanController.java
 │   └── LaporanPohonController.java
 ├── entity/
@@ -311,11 +268,11 @@ com.ecotrack/
 
 ---
 
-## 3. DATABASE SCHEMA (PostgreSQL)
+## 3. DATABASE SCHEMA
 
 ### Tabel: `user`
 ```sql
-CREATE TABLE user (
+CREATE TABLE "user" (
     id_user   VARCHAR PRIMARY KEY,
     nama      VARCHAR NOT NULL,
     role      VARCHAR NOT NULL
@@ -326,13 +283,12 @@ CREATE TABLE user (
 ```sql
 CREATE TABLE data_pohon (
     id_pohon              VARCHAR PRIMARY KEY,
-    id_user               VARCHAR REFERENCES user(id_user),
+    id_user               VARCHAR REFERENCES "user"(id_user),
     nama_pohon            VARCHAR NOT NULL,
     usia                  INT,
     lokasi                VARCHAR,
-    kapasitas_serapan_karbon FLOAT,
-    status                VARCHAR,
-    file_foto_path        VARCHAR,
+    serapan_karbon        FLOAT,
+    file_foto             VARCHAR,
     created_at            TIMESTAMP DEFAULT NOW(),
     updated_at            TIMESTAMP DEFAULT NOW()
 );
@@ -342,12 +298,12 @@ CREATE TABLE data_pohon (
 ```sql
 CREATE TABLE data_penanaman (
     id_penanaman      VARCHAR PRIMARY KEY,
-    id_user           VARCHAR REFERENCES user(id_user),
+    id_user           VARCHAR REFERENCES "user"(id_user),
     id_pohon          VARCHAR REFERENCES data_pohon(id_pohon),
     lokasi            VARCHAR NOT NULL,
     jenis_pohon       VARCHAR NOT NULL,
     jumlah_pohon      INT NOT NULL,
-    tanggal_penanaman DATE NOT NULL,
+    tanggal           DATE NOT NULL,
     estimasi_karbon   FLOAT,
     created_at        TIMESTAMP DEFAULT NOW(),
     updated_at        TIMESTAMP DEFAULT NOW()
@@ -358,11 +314,11 @@ CREATE TABLE data_penanaman (
 ```sql
 CREATE TABLE laporan_pohon (
     id_laporan      VARCHAR PRIMARY KEY,
-    id_user         VARCHAR REFERENCES user(id_user),
+    id_user         VARCHAR REFERENCES "user"(id_user),
     id_pohon        VARCHAR REFERENCES data_pohon(id_pohon),
-    kondisi         VARCHAR NOT NULL,   -- 'rusak' | 'mati' | 'ditebang'
+    kondisi         VARCHAR NOT NULL,
     lokasi          VARCHAR NOT NULL,
-    file_foto_path  VARCHAR,
+    file_foto       VARCHAR,
     estimasi_karbon FLOAT,
     tanggal_laporan DATE NOT NULL,
     created_at      TIMESTAMP DEFAULT NOW()
@@ -380,32 +336,54 @@ class User {
     private String nama;
     private String role;
 
-    public void pilihMenu(String menuTujuan); // navigasi ke halaman tujuan
+    public void pilihMenuPenanaman();
+    public void lihatDataPohon();
+    public void lihatStatistik();
+    public void kirimLaporan(Object dataInput, File fileFoto);
+    public String pilihOpsiKelolaData(String opsi);
+    public void isiDataPenanaman(DataPenanaman dataPenanaman);
+    public Object unggahFoto(File fileFoto);
+    public void isiDataPohon(Object dataPohon);
+    public void simpanData(Object data, String jenisData);
+    public String konfirmasiHapus(String idData);
 }
 ```
 
-### 4.2 DataPohon (C-07)
-```java
-class DataPohon {
-    private String idPohon;
-    private String namaPohon;
-    private float  serapanKarbon;  // kg/tahun
-    private String status;
-    private String fileFotoPath;
-    // getters/setters
-}
-```
-
-### 4.3 DataPenanaman (C-03)
+### 4.2 DataPenanaman (C-03)
 ```java
 class DataPenanaman {
     private String idPenanaman;
     private String lokasi;
     private String jenisPohon;
-    private int    jumlahPohon;
-    private String tanggalPenanaman;
-    private float  estimasiKarbon;
-    // getters/setters
+    private int jumlahPohon;
+    private Date tanggal;
+    private float estimasiKarbon;
+
+    public void cariData(String idPenanaman);
+    public void simpanData(DataPenanaman data);
+    public void ubahData(DataPenanaman data);
+    public void hapusData(String idPenanaman);
+    public void getDataPenanaman();
+}
+```
+
+### 4.3 DataPohon (C-07)
+```java
+class DataPohon {
+    private String idPohon;
+    private String namaPohon;
+    private int usia;
+    private String lokasi;
+    private float serapanKarbon;
+    private String fileFoto;
+
+    public void cariDataPohon(String kriteria);
+    public void getDataPohon();
+    public void simpanData(DataPohon data);
+    public void ubahData(DataPohon data);
+    public void hapusData(String idPohon);
+    public void simpanDataPohon(Object data);
+    public void simpanFoto(File file);
 }
 ```
 
@@ -415,552 +393,89 @@ class LaporanPohon {
     private String idLaporan;
     private String kondisi;
     private String lokasi;
-    private String fileFotoPath;
-    private float  estimasiKarbon;
-    private String tanggalLaporan;
-    // getters/setters
+    private String fileFoto;
+    private float estimasiKarbon;
+
+    public void simpanLaporan(LaporanPohon data);
 }
 ```
 
 ---
 
-## 5. BOUNDARY CLASSES — UI SPEC DETAIL (PIXEL-PRECISE)
+## 5. BOUNDARY CLASSES
 
----
-
-### GLOBAL — DESIGN SYSTEM & COLOR PALETTE
-
-```
-WARNA UTAMA:
-  Sidebar background     : #1B3A2D  (dark green teal)
-  Sidebar active item bg : #A8E063  (lime green, text hitam)
-  Sidebar inactive text  : #FFFFFF  (putih, opacity ~70%)
-  Sidebar logo/icon      : putih
-
-  Content area background: #F0FAF5  (off-white mint, sangat terang)
-  Card background putih  : #FFFFFF
-  Card background hijau  : linear-gradient(135deg, #4CAF7D → #2E7D52)  (Total Pohon)
-  Card background teal   : linear-gradient(135deg, #2D6E6E → #1B4A4A)  (Serapan Karbon)
-
-  Aksen hijau lime (button primer) : #A8E063  (teks hitam di atasnya)
-  Aksen hijau teal (chart, badge)  : #26A69A  atau #00897B
-  Aksen merah (delete icon)        : #EF5350
-  Aksen teal (edit icon)           : #26A69A
-  Teks judul halaman               : #1B3A2D  (dark green)
-  Teks subtitle halaman            : #6B9080  (muted green-grey)
-  Teks tabel header                : #9E9E9E  (abu-abu, huruf kapital kecil)
-  Teks data tabel                  : #212121
-
-FONT:
-  Semua teks menggunakan sans-serif (Inter / Poppins)
-  Judul halaman    : Bold, ~22px
-  Subtitle         : Regular, ~12px, muted
-  Angka card besar : Bold, ~36px
-  Label card kecil : Regular, ~12px
-  Tabel header     : SemiBold, ~11px, uppercase, letter-spacing
-  Tabel data       : Regular, ~13px
-
-RADIUS & SPACING:
-  Card border-radius : 16px
-  Modal border-radius: 12px
-  Button border-radius: 8px
-  Input border-radius : 8px
-  Sidebar lebar      : ~220px
-  Gap antar card     : 16px
-  Padding content    : 24px
-
-SIDEBAR MENU ITEMS (urutan dari atas ke bawah):
-  1. 📊 Dashboard Statistik  → HalamanStatistik
-  2. 🌳 Data Pohon           → HalamanDataPohon
-  3. 🌿 Data Penanaman       → HalamanDataPenanaman
-  4. 📋 Lapor Kondisi Pohon  → FormLaporanPohon
-  Active item: background #A8E063, teks hitam, full-width rounded pill
-  Inactive item: teks putih semi-transparan
-```
-
----
-
-### 5.1 HalamanStatistik (C-08) — LAYAR 1: Dashboard Statistik
-
-#### Layout Struktur
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ SIDEBAR (220px)  │  CONTENT AREA (sisa width)                   │
-│                  │  ┌─────────────────────────────────────────┐ │
-│ [Logo EcoTrack]  │  │ Header: "Dashboard Statistik"           │ │
-│                  │  │ Sub: "Monitoring serapan karbon..."     │ │
-│ [Dashboard ●]    │  │                          [📅 Bulanan ▼] │ │
-│ [Data Pohon]     │  ├─────────────────────────────────────────┤ │
-│ [Data Penanaman] │  │ [Card Hijau: Total Pohon]               │ │
-│ [Lapor Kondisi]  │  │ [Card Teal: Serapan Karbon]             │ │
-│                  │  │ [Card Putih: Rata-rata Serapan]         │ │
-│                  │  ├─────────────────────────────────────────┤ │
-│                  │  │ [Line Chart: Jumlah Pohon]              │ │
-│                  │  │ [Bar Chart: Serapan Karbon]             │ │
-│                  │  └─────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-#### Header
-- Judul: `"Dashboard Statistik"` — Bold, dark green
-- Subtitle: `"Monitoring serapan karbon dan penghijauan kota"` — muted, kecil
-- Dropdown filter `"📅 Bulanan ▼"` — pojok kanan atas content, border tipis, rounded
-
-#### 3 Summary Cards (sejajar horizontal, lebar sama rata)
-
-**Card 1 — Total Pohon** (background gradient hijau)
-```
-Label : "Total Pohon"
-Angka : "906"  → bold, ~36px, putih
-Sub   : "6 bulan terakhir"  → putih, kecil
-Badge : "↑ +12.5% dari periode lalu"  → lime green pill, teks hitam kecil
-Visual: ilustrasi pohon/landscape di pojok kanan card (dekoratif)
-```
-
-**Card 2 — Serapan Karbon** (background gradient dark teal)
-```
-Label : "Serapan Karbon"
-Angka : "2,491"  → bold, ~36px, putih
-Sub   : "kg CO₂ per tahun"  → putih, kecil
-Badge : "↑ +8.2% dari periode lalu"  → badge putih/lime
-Visual: ilustrasi awan & pohon di pojok kanan card (dekoratif/SVG)
-```
-
-**Card 3 — Rata-rata Serapan** (background putih)
-```
-Label : "Rata-rata Serapan"
-Angka : "415"  → bold, ~36px, dark green
-Sub   : "kg CO₂ / periode"  → muted, kecil
-Badge : "→ Konsisten meningkat"  → teks muted, tanpa background badge
-```
-
-#### 2 Charts (sejajar horizontal, masing-masing ~50% width)
-
-**Chart Kiri — Jumlah Pohon (Line Chart)**
-```
-Judul    : "Jumlah Pohon"
-Subtitle : "Pertumbuhan pohon yang ditanam"
-X-axis   : Jan, Feb, Mar, Apr, Mei, Jun
-Y-axis   : 0, 60, 120, 180, 240
-Line     : warna hijau (#4CAF7D), dengan filled area di bawah line
-           (area fill: hijau transparan, opacity ~20%)
-Points   : lingkaran kecil di tiap data point, outline hijau
-Background chart: putih, rounded card
-Grid lines: horizontal, abu-abu sangat tipis
-```
-
-**Chart Kanan — Serapan Karbon (Bar Chart)**
-```
-Judul    : "Serapan Karbon"
-Subtitle : "Estimasi penyerapan CO₂ (kg/tahun)"
-X-axis   : Jan, Feb, Mar, Apr, Mei, Jun
-Y-axis   : 0, 200, 400, 600, 800
-Bars     : warna teal (#26A69A), lebar sedang, rounded top
-           Bar Jun paling tinggi (~750), Jan paling rendah (~150)
-Background chart: putih, rounded card
-Grid lines: horizontal, abu-abu tipis
-```
-
-#### JavaFX Implementation Notes
-```
-- Gunakan javafx.scene.chart.LineChart untuk chart kiri
-- Gunakan javafx.scene.chart.BarChart untuk chart kanan
-- Data di-feed dari StatistikController.ambilDataVisualisasi()
-- Dropdown filter "Bulanan" → onChange trigger hitungStatistikTotal(periode)
-- Cards angka update otomatis saat filter berubah
-```
-
-**Methods:**
+### 5.1 HalamanStatistik (C-08)
 ```java
-public void tampilkanGrafik(String filterPeriode);
-public void pilihFilterPeriode();
-public void updateCards(Map<String, Object> statistik);
+class HalamanStatistik {
+    private Object grafikStatistik;
+    private String filterTerpilih;
+
+    public void ambilData();
+    public void tampilkanStatistik(Object data);
+    public void pilihPeriode(String periode);
+    public void tampilkanGrafik(Object data);
+    public void perbaruiTampilan(Object data);
+    public void tampilkanPesanError(String pesan);
+}
 ```
 
----
-
-### 5.2 HalamanDataPohon (C-06) — LAYAR 2: Data Pohon
-
-#### Layout Struktur
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ SIDEBAR          │  CONTENT AREA                                 │
-│                  │  ┌─────────────────────────────────────────┐ │
-│ [Dashboard]      │  │ "Data Pohon"              [+Tambah Pohon]│ │
-│ [Data Pohon ●]   │  │ "Kelola master data referensi jenis pohon"│ │
-│ [Data Penanaman] │  │ 🔔 Total Jenis Pohon: 5                  │ │
-│ [Lapor Kondisi]  │  ├─────────────────────────────────────────┤ │
-│                  │  │ [Tabel Daftar Pohon]                     │ │
-│                  │  │  NAMA POHON | USIA | SERAPAN | AKSI      │ │
-│                  │  │  row...                                   │ │
-│                  │  └─────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-#### Header Area
-- Judul: `"Data Pohon"` — Bold, dark green
-- Subtitle: `"Kelola master data referensi jenis pohon"` — muted kecil
-- Badge info: `🔔 Total Jenis Pohon  [5]` — icon bell, teks muted, angka bold
-- Button `"+ Tambah Pohon"` — pojok kanan atas, background #A8E063 (lime green), teks hitam bold, rounded 8px
-
-#### Tabel Daftar Pohon
-```
-Background tabel: #FFFFFF, rounded 16px, shadow tipis
-
-HEADER ROW (semua uppercase, abu-abu, font kecil):
-  NAMA POHON | USIA (TAHUN) | SERAPAN KARBON (KG/TAHUN) | AKSI
-
-DATA ROW (per pohon):
-  Col 1 - Nama Pohon:
-    → Icon lingkaran kecil (filled #A8E063 / lime) di kiri nama
-    → Teks nama pohon: "Mahoni", "Jati", dll.
-  Col 2 - Usia:
-    → Badge pill: background #E8F5E9 (hijau muda), teks "#2E7D52"
-    → Contoh: "5 tahun", "10 tahun", "8 tahun"
-  Col 3 - Serapan Karbon:
-    → Teks biasa + satuan subscript/kecil "kg"
-    → Contoh: "28.5kg", "45.2kg", "62.8kg"
-  Col 4 - Aksi:
-    → Icon ✏️ (edit): warna teal (#26A69A), clickable
-    → Icon 🗑️ (delete): warna merah (#EF5350), clickable
-    → Keduanya tanpa background, spacing rapat
-
-DATA ROWS (dari gambar persis):
-  Row 1: Mahoni    | 5 tahun  | 28.5kg  | edit | delete
-  Row 2: Jati      | 10 tahun | 45.2kg  | edit | delete
-  Row 3: Trembesi  | 8 tahun  | 62.8kg  | edit | delete
-  Row 4: Akasia    | 3 tahun  | 18.4kg  | edit | delete
-  Row 5: Mangrove  | 6 tahun  | 35.7kg  | edit | delete
-
-Row separator: border bottom tipis #F0F0F0
-Row hover: background #F5FFF5 (hijau sangat muda)
-```
-
-#### Modal — Tambah Data Pohon (Image 3)
-```
-OVERLAY: background hitam transparan (opacity 50%) menutupi seluruh layar
-
-MODAL CARD:
-  Background : #FFFFFF
-  Width      : ~400px
-  Padding    : 24px
-  Radius     : 12px
-  Shadow     : medium drop shadow
-
-HEADER MODAL:
-  Judul   : "Tambah Data Pohon"  — Bold, dark green, ~16px
-  Sub     : "Masukkan informasi pohon baru ke dalam database" — muted, ~12px
-  [X] button : pojok kanan atas, teks abu-abu, no background
-
-FORM FIELDS (3 fields, label di atas input):
-
-  Field 1 — Nama Pohon
-    Label      : "Nama Pohon"  — semibold, ~13px
-    Input      : TextField, placeholder "Contoh: Mahoni"
-    Border     : 1px solid #E0E0E0, radius 8px
-    Focus      : border #A8E063 (lime green)
-
-  Field 2 — Usia Pohon (tahun)
-    Label      : "Usia Pohon (tahun)"
-    Input      : TextField, placeholder "Contoh: 5"
-    (sama styling dengan Field 1)
-
-  Field 3 — Kapasitas Serapan Karbon (kg/tahun)
-    Label      : "Kapasitas Serapan Karbon (kg/tahun)"
-    Input      : TextField, placeholder "Contoh: 28.5"
-    (sama styling)
-
-FOOTER MODAL (2 button, aligned right):
-  [Batal]         — outline button, border abu-abu, teks abu-abu, no fill
-  [Tambah Pohon]  — filled #A8E063, teks hitam bold, radius 8px
-```
-
-**Methods:**
+### 5.2 HalamanDataPohon (C-06)
 ```java
-public void tampilkanDaftarPohon();
-public void tampilkanDetailPohon(String idPohon);
-public void tampilkanModalTambah();
-public void tutupModal();
+class HalamanDataPohon {
+    private List daftarPohon;
+    private String filterData;
+
+    public void ambilDataPohon();
+    public void tampilkanData(List dataPohonList);
+    public void tampilkanDaftar();
+    public void hapusData(String idPohon);
+    public void tampilkanPesanError(String pesan);
+}
 ```
 
----
-
-### 5.3 HalamanDataPenanaman (C-02) — LAYAR 3: Data Penanaman
-
-#### Layout Struktur
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ SIDEBAR          │  CONTENT AREA                                 │
-│                  │  ┌─────────────────────────────────────────┐ │
-│ [Dashboard]      │  │ "Data Penanaman"    [+ Catat Penanaman] │ │
-│ [Data Pohon]     │  │ "Catat dan kelola riwayat penanaman..." │ │
-│ [Data Penanaman●]│  │ [Card Hijau: Total Pohon Ditanam]       │ │
-│ [Lapor Kondisi]  │  │ [Card Teal: Estimasi Total Serapan]     │ │
-│                  │  ├─────────────────────────────────────────┤ │
-│                  │  │ "Riwayat Penanaman"                     │ │
-│                  │  │ [Tabel Riwayat]                         │ │
-│                  │  └─────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-#### Header Area
-- Judul: `"Data Penanaman"` — Bold, dark green
-- Subtitle: `"Catat dan kelola riwayat penanaman pohon"` — muted
-- Button `"+ Catat Penanaman Baru"` — pojok kanan atas, lime green, teks hitam bold
-
-#### 2 Summary Cards (sejajar horizontal)
-
-**Card Kiri — Total Pohon Ditanam** (background gradient hijau)
-```
-Label  : "Total Pohon Ditanam"
-Angka  : "155"  → bold, ~36px, putih
-Sub    : "Akumulasi seluruh pencatatan"  → putih kecil
-Icon   : 🌿 (daun) di pojok kanan card, putih/transparan
-```
-
-**Card Kanan — Estimasi Total Serapan** (background dark teal/navy teal)
-```
-Label  : "Estimasi Total Serapan"
-Angka  : "6,699"  → bold, ~36px, putih
-Sub    : "kg CO₂/tahun kapasitas tahunan"  → putih kecil
-Icon   : ⇄ (panah) di pojok kanan card
-```
-
-#### Tabel Riwayat Penanaman
-```
-Section title: "Riwayat Penanaman"  — semibold, dark green, ~14px
-
-HEADER ROW:
-  TANGGAL | LOKASI | JENIS POHON | JUMLAH | EST. SERAPAN (KG/THN)
-
-DATA ROWS (dari gambar persis):
-
-  Row 1:
-    Tanggal     : "15 Jan 2026"  → teks teal/hijau (#26A69A), bukan hitam
-    Lokasi      : 📍 "Taman Kota A"  → icon pin teal kecil di kiri
-    Jenis Pohon : badge pill "Mahoni"  → background hijau muda, teks hijau gelap
-    Jumlah      : "50pohon"  → angka bold, "pohon" subscript/kecil muted
-    Est. Serapan: "1,425kg"  → angka bold, "kg" subscript kecil
-
-  Row 2:
-    Tanggal     : "20 Feb 2026"  → teal
-    Lokasi      : 📍 "Jalan Raya B"
-    Jenis Pohon : badge "Trembesi"  → warna badge bisa berbeda (lime/kuning muda)
-    Jumlah      : "30pohon"
-    Est. Serapan: "1,884kg"
-
-  Row 3:
-    Tanggal     : "10 Mar 2026"  → teal
-    Lokasi      : 📍 "Hutan Kota C"
-    Jenis Pohon : badge "Jati"  → warna badge beda lagi (kuning muda)
-    Jumlah      : "75pohon"
-    Est. Serapan: "3,390kg"
-
-Badge jenis pohon: tiap jenis pohon punya warna badge unik (beda-beda), semua
-pastel/muted. Implementasi: buat map namaPohon → warna background badge.
-```
-
-#### Modal — Catat Penanaman Baru (Image 4 bawah)
-```
-OVERLAY: hitam semi-transparan
-
-MODAL CARD:
-  Width  : ~420px
-  Padding: 24px
-  Radius : 12px
-
-HEADER MODAL:
-  Judul : "Catat Penanaman Baru"  — Bold, dark green
-  Sub   : "Masukkan informasi penanaman pohon untuk perhitungan serapan karbon otomatis"
-          — muted, ~12px, 2 baris
-  [X]   : pojok kanan atas
-
-FORM FIELDS (4 fields):
-
-  Field 1 — Lokasi Penanaman
-    Label      : "Lokasi Penanaman"
-    Input      : TextField, placeholder "Contoh: Taman Kota A"
-
-  Field 2 — Jenis Pohon
-    Label      : "Jenis Pohon"
-    Input      : ComboBox / DropdownButton
-    Placeholder: "Pilih jenis pohon"
-    Arrow      : ▼ di sisi kanan
-    Options    : list nama pohon dari data_pohon (dynamic dari DB)
-
-  Field 3 — Jumlah Pohon
-    Label      : "Jumlah Pohon"
-    Input      : TextField (numeric), placeholder "Contoh: 50"
-
-  Field 4 — Tanggal Penanaman
-    Label      : "Tanggal Penanaman"
-    Input      : DatePicker JavaFX
-
-FOOTER MODAL:
-  [Batal]               — outline, teks abu-abu
-  [Simpan Data Penanaman] — filled #A8E063, teks hitam bold
-```
-
-**Methods:**
+### 5.3 HalamanDataPenanaman (C-02)
 ```java
-public void tampilkanDaftarPenanaman();
-public void tampilkanFormInput();
-public void tutupModal();
-public void populateDropdownJenisPohon();  // load dari PohonRepository
+class HalamanDataPenanaman {
+    public void ambilDataPenanaman();
+    public void tampilkanData(List data);
+    public void tampilkanPesanError(String pesan);
+}
 ```
 
----
-
-### 5.4 FormLaporanPohon (C-04) — LAYAR 4: Lapor Kondisi Pohon
-
-#### Layout Struktur — SPLIT LAYOUT
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ SIDEBAR          │  CONTENT AREA                                 │
-│                  │  ┌──────────────────┬──────────────────────┐ │
-│ [Dashboard]      │  │  PANEL KIRI      │  PANEL KANAN         │ │
-│ [Data Pohon]     │  │  (~65% width)    │  (~35% width)        │ │
-│ [Data Penanaman] │  │  Form Laporan    │  Riwayat Laporan     │ │
-│ [Lapor Kondisi●] │  │  Baru            │                      │ │
-│                  │  └──────────────────┴──────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-#### Header Area (di atas split)
-- Judul: `"Lapor Kondisi Pohon"` — Bold, dark green
-- Subtitle: `"Catat dan pantau kondisi pohon dengan bukti visual"` — muted
-
-#### Panel Kiri — Form Laporan Baru
-```
-Section title: "Form Laporan Baru"  — semibold, dark, ~14px
-Sub title    : "Masukkan detail kondisi pohon yang ditemukan"  — muted, ~12px
-
-Background   : #FFFFFF, rounded 16px, shadow tipis
-Padding      : 20px
-
-FORM FIELDS (4 fields + upload area):
-
-  Field 1 — Lokasi
-    Label      : "Lokasi"
-    Input      : TextField, placeholder "Contoh: Taman Kota A, Blok B"
-    Width      : full width
-
-  Field 2 — Status Kondisi
-    Label      : "Status Kondisi"
-    Input      : ComboBox / Dropdown
-    Placeholder: "Pilih status kondisi"
-    Arrow      : ▼
-    Options    : ["Rusak", "Mati", "Ditebang"]
-
-  Field 3 — Catatan Tambahan
-    Label      : "Catatan Tambahan"
-    Input      : TextArea (multiline, ~4 baris tinggi)
-    Placeholder: "Deskripsi kondisi atau keterangan tambahan..."
-
-  Field 4 — Foto Bukti (Upload Area)
-    Label      : "Foto Bukti"
-    Area       : Dashed border (#A8E063 atau abu-abu), rounded 12px
-                 Tinggi ~130px, lebar full
-    Isi area   :
-      Icon     : ⬆ (upload arrow, abu-abu, ~32px)
-      Text 1   : "Drag & drop foto di sini"  — bold, abu-abu gelap
-      Text 2   : "atau"  — muted kecil
-      Button   : [Browse File]  — outline button kecil, border abu-abu
-      Text 3   : "Mendukung format PNG, JPG, atau JPEG"  — muted sangat kecil
-    onDragOver : highlight border jadi lime green
-    onDrop/onClick → FileChooser → simpan path → preview nama file
-
-BUTTON SUBMIT (full width, di bawah form):
-  [         Simpan Laporan         ]
-  Background : #A8E063 (lime green)
-  Teks       : "Simpan Laporan"  — bold, hitam, center
-  Height     : ~48px
-  Radius     : 8px
-  onClick    → kirimDataLaporan() → LaporanPohonController.prosesLaporan()
-```
-
-#### Panel Kanan — Riwayat Laporan
-```
-Section title: "Riwayat Laporan"  — semibold, ~14px
-Background   : #FFFFFF, rounded 16px, shadow tipis
-Padding      : 20px
-
-STATE KOSONG (seperti di gambar):
-  Icon       : ilustrasi dokumen/file (SVG, abu-abu muda, ~64px)
-  Text 1     : "Belum ada laporan"  — semibold, abu-abu gelap
-  Text 2     : "Mulai tambahkan laporan kondisi pohon menggunakan form"
-               — muted kecil, center, max 2 baris
-
-STATE ADA DATA (saat laporan sudah ada):
-  List cards per laporan:
-    - Tanggal laporan
-    - Lokasi
-    - Status kondisi (badge pill warna sesuai: merah=mati, oranye=rusak, abu=ditebang)
-    - Estimasi karbon
-```
-
-**Methods:**
+### 5.4 FormLaporanPohon (C-04)
 ```java
-public void tampilkanFormLaporan();
-public void kirimDataLaporan(LaporanPohon dataLaporan);
-public void tampilkanRiwayatLaporan();
-public void handleFileUpload();       // FileChooser + drag-drop handler
-public void handleDragOver(DragEvent e);
-public void handleDrop(DragEvent e);
+class FormLaporanPohon {
+    private String fileFoto;
+    private Object dataInput;
+
+    public boolean validasiData(Object dataInput);
+    public void prosesLaporan(Object dataInput, File fileFoto);
+    public void tampilkanStatus(String status);
+}
 ```
 
----
-
-### 5.5 FormDataPohon (C-10) — Embedded dalam HalamanDataPohon
-Tidak punya halaman tersendiri — muncul sebagai modal di atas HalamanDataPohon.  
-Spec modal sudah tercakup di 5.2 (Modal Tambah Data Pohon).
-
-**Methods:**
+### 5.5 FormDataPohon (C-10)
 ```java
-public void tampilkanForm();
-public void unggahFoto();
-public void isiDataPohon();
+class FormDataPohon {
+    private Object dataInput;
+
+    public void tampilkanForm();
+    public boolean validasiFile(File file);
+    public boolean validasiData(Object dataInput);
+    public void prosesInputPohon(Object data);
+    public void simpanDataPohon(Object data);
+    public void tampilkanStatus(String status);
+}
 ```
 
----
-
-### GLOBAL UI BEHAVIOR NOTES
-```
-1. SIDEBAR NAVIGATION
-   - Active menu: background pill #A8E063, teks hitam
-   - Klik item → load halaman baru (ganti center pane JavaFX)
-   - Logo "EcoTrack" + icon daun di pojok atas sidebar
-
-2. EMPTY STATE
-   - Semua tabel/panel kosong wajib tampilkan ilustrasi + teks informatif
-   - Jangan tampilkan tabel kosong tanpa pesan
-
-3. LOADING STATE
-   - Saat fetch data dari DB: tampilkan ProgressIndicator di tengah panel
-
-4. ERROR STATE
-   - Validasi gagal: border input jadi merah, tampilkan label error di bawah field
-   - DB error: tampilkan Alert dialog JavaFX
-
-5. MODAL BEHAVIOR
-   - Klik overlay (area luar modal) → tutup modal
-   - Tombol [Batal] → tutup modal tanpa save
-   - Tombol [X] → tutup modal
-
-6. BADGE WARNA JENIS POHON (map statis, bisa dikembangkan):
-   Mahoni   → background #E8F5E9, teks #2E7D52
-   Jati     → background #FFF9C4, teks #F9A825
-   Trembesi → background #E0F2F1, teks #00796B
-   Akasia   → background #FFF3E0, teks #E65100
-   Mangrove → background #E3F2FD, teks #1565C0
-   Default  → background #F3E5F5, teks #6A1B9A
-
-7. TABEL ROW HOVER
-   Semua tabel: hover row → background #F0FFF4
-
-8. BUTTON STATES
-   Primer (lime): normal #A8E063, hover #95D14F, disabled opacity 50%
-   Outline: normal border #E0E0E0, hover border #A8E063
+### 5.6 FormLaporanPenanaman (C-09)
+```java
+class FormLaporanPenanaman {
+    public void tampilkanForm();
+    public void kumpulkanDataInput(DataPenanaman data);
+    public boolean validasiData(DataPenanaman data);
+    public void tampilkanStatus(String status);
+}
 ```
 
 ---
@@ -970,56 +485,166 @@ public void isiDataPohon();
 ### 6.1 PenanamanController (C-11)
 ```java
 class PenanamanController {
-
-    // Ambil semua data penanaman dari repository
-    public List<DataPenanaman> getDataPenanaman();
-
-    // Validasi input form penanaman (format & kelengkapan)
-    public boolean validasiInput(DataPenanaman data);
-
-    // Hitung estimasi serapan karbon
-    // Pseudocode (Algo-003):
-    //   IF jenisPohon IS NULL OR jumlahPohon <= 0 → error
-    //   dataPohon ← Query Q-010 (cari by nama_pohon)
-    //   IF dataPohon IS EMPTY → error
-    //   estimasiKarbon = jumlahPohon * dataPohon.serapanKarbon
-    public float hitungEstimasi(String jenisPohon, int jumlahPohon);
-
-    // Simpan data penanaman (Algo-004):
-    //   validasiInput → hitungEstimasi → Query Q-002
-    public String simpanDataPenanaman(DataPenanaman data);
+    public void cariData(String idPenanaman);
+    public void ambilDataPenanaman();
+    public void simpanDataPenanaman(DataPenanaman dataPenanaman);
+    public void ubahDataPenanaman(DataPenanaman dataPenanaman);
+    public void hapusDataPenanaman(String idPenanaman);
+    public float hitungEstimasiKarbon(DataPenanaman dataPenanaman);
+    public void teruskanKeView(Object result);
 }
+```
+
+**Algoritma:**
+
+Algo-051 `cariData(idPenanaman)`:
+```
+result <- DataPenanaman.cariData(idPenanaman)
+RETURN result
+```
+
+Algo-052 `ambilDataPenanaman()`:
+```
+result <- DataPenanaman.getDataPenanaman()
+teruskanKeView(result)
+RETURN result
+```
+
+Algo-053 `simpanDataPenanaman(dataPenanaman)`:
+```
+IF FormLaporanPenanaman.validasiData(dataPenanaman) = TRUE THEN
+    dataPenanaman.estimasiKarbon <- hitungEstimasiKarbon(dataPenanaman)
+    result <- DataPenanaman.simpanData(dataPenanaman)
+    teruskanKeView(result)
+ELSE
+    result <- "Data penanaman tidak valid"
+END IF
+RETURN result
+```
+
+Algo-054 `ubahDataPenanaman(dataPenanaman)`:
+```
+IF FormLaporanPenanaman.validasiData(dataPenanaman) = TRUE THEN
+    dataPenanaman.estimasiKarbon <- hitungEstimasiKarbon(dataPenanaman)
+    result <- DataPenanaman.ubahData(dataPenanaman)
+    teruskanKeView(result)
+ELSE
+    result <- "Data penanaman tidak valid"
+END IF
+RETURN result
+```
+
+Algo-055 `hapusDataPenanaman(idPenanaman)`:
+```
+result <- DataPenanaman.hapusData(idPenanaman)
+teruskanKeView(result)
+RETURN result
+```
+
+Algo-056 `hitungEstimasiKarbon(dataPenanaman)`:
+```
+dataPohon <- DataPohon.cariDataPohon(dataPenanaman.jenisPohon)
+estimasiKarbon <- dataPenanaman.jumlahPohon * dataPohon.serapanKarbon
+RETURN estimasiKarbon
+```
+
+Algo-057 `teruskanKeView(result)`:
+```
+RETURN result
 ```
 
 ---
 
-### 6.2 PohonController (C-13)
+### 6.2 DataPohonController (C-13)
 ```java
-class PohonController {
-
-    // Ambil semua data pohon (Query Q-005)
-    public List<DataPohon> getDataPohon();
-
-    // Validasi input data pohon (Algo-010):
-    //   namaPohon tidak boleh null/kosong
-    //   serapanKarbon tidak boleh negatif
-    public boolean validasiData(DataPohon data);
-
-    // Simpan foto ke local file system, return path
-    public String prosesSimpanFoto(File file);
-
-    // Simpan data pohon (Query Q-006)
-    public String simpanDataPohon(DataPohon data);
-
-    // Ambil detail satu pohon (Query Q-007)
-    public DataPohon getDetailPohon(String idPohon);
-
-    // Update data pohon (Query Q-008)
-    public String updateDataPohon(DataPohon data);
-
-    // Hapus data pohon (Query Q-009)
-    public String hapusDataPohon(String idPohon);
+class DataPohonController {
+    public void cariDataPohon(String kriteria);
+    public void ambilDetailPohon(String idPohon);
+    public void ambilDataPohon();
+    public void prosesInputPohon(Object data);
+    public void simpanDataPohon(Object data);
+    public void ubahDataPohon(Object data);
+    public void hapusDataPohon(String idPohon);
+    public void simpanFoto(File file);
+    public boolean validasiData(Object data);
+    public void tampilkanStatus(String status);
 }
+```
+
+**Algoritma:**
+
+Algo-061 `cariDataPohon(kriteria)`:
+```
+result <- DataPohon.cariDataPohon(kriteria)
+RETURN result
+```
+
+Algo-062 `ambilDetailPohon(idPohon)`:
+```
+result <- DataPohon.cariDataPohon(idPohon)
+RETURN result
+```
+
+Algo-063 `ambilDataPohon()`:
+```
+result <- DataPohon.getDataPohon()
+RETURN result
+```
+
+Algo-064 `prosesInputPohon(data)`:
+```
+IF validasiData(data) = TRUE THEN
+    result <- simpanDataPohon(data)
+ELSE
+    result <- "Data pohon tidak valid"
+END IF
+tampilkanStatus(result)
+RETURN result
+```
+
+Algo-065 `simpanDataPohon(data)`:
+```
+IF data.fileFoto IS NOT NULL THEN
+    data.fileFoto <- simpanFoto(data.fileFoto)
+END IF
+result <- DataPohon.simpanDataPohon(data)
+RETURN result
+```
+
+Algo-066 `ubahDataPohon(data)`:
+```
+IF validasiData(data) = TRUE THEN
+    result <- DataPohon.ubahData(data)
+ELSE
+    result <- "Data pohon tidak valid"
+END IF
+RETURN result
+```
+
+Algo-067 `hapusDataPohon(idPohon)`:
+```
+result <- DataPohon.hapusData(idPohon)
+RETURN result
+```
+
+Algo-068 `simpanFoto(file)`:
+```
+result <- DataPohon.simpanFoto(file)
+RETURN result
+```
+
+Algo-069 `validasiData(data)`:
+```
+IF data.namaPohon IS NULL OR data.usia < 0 OR data.serapanKarbon < 0 THEN
+    RETURN FALSE
+ELSE
+    RETURN TRUE
+END IF
+```
+
+Algo-070 `tampilkanStatus(status)`:
+```
+RETURN status
 ```
 
 ---
@@ -1027,17 +652,37 @@ class PohonController {
 ### 6.3 LaporanPohonController (C-12)
 ```java
 class LaporanPohonController {
-
-    // Proses laporan pohon rusak (Algo-015):
-    //   IF kondisi/lokasi null → error
-    //   IF ada foto → prosesSimpanFoto() → simpan path
-    //   hitungKapasitasBaru()
-    //   Query Q-011 → simpan laporan
-    public String prosesLaporan(LaporanPohon data);
-
-    // Hitung ulang estimasi karbon setelah pohon rusak/mati
-    public float hitungKapasitasBaru(LaporanPohon data);
+    public void prosesLaporan(LaporanPohon dataLaporan);
+    public float hitungEstimasiKarbon(LaporanPohon data);
+    public void simpanLaporan(LaporanPohon dataLaporan);
 }
+```
+
+**Algoritma:**
+
+Algo-058 `prosesLaporan(dataLaporan)`:
+```
+dataLaporan.estimasiKarbon <- hitungEstimasiKarbon(dataLaporan)
+result <- simpanLaporan(dataLaporan)
+RETURN result
+```
+
+Algo-059 `hitungEstimasiKarbon(dataLaporan)`:
+```
+IF dataLaporan.kondisi = "ditebang" THEN
+    estimasiKarbon <- 0
+ELSE IF dataLaporan.kondisi = "rusak" THEN
+    estimasiKarbon <- estimasi karbon lama * 0.5
+ELSE
+    estimasiKarbon <- estimasi karbon lama
+END IF
+RETURN estimasiKarbon
+```
+
+Algo-060 `simpanLaporan(dataLaporan)`:
+```
+result <- LaporanPohon.simpanLaporan(dataLaporan)
+RETURN result
 ```
 
 ---
@@ -1045,18 +690,58 @@ class LaporanPohonController {
 ### 6.4 StatistikController (C-14)
 ```java
 class StatistikController {
-
-    // Hitung statistik total atau berdasarkan filter periode (Algo-020):
-    //   IF filterPeriode == null → Query Q-013
-    //   ELSE → Query Q-014
-    //   Return: totalPohon, totalSerapanKarbon, filterPeriode
-    public Map<String, Object> hitungStatistikTotal(String filterPeriode);
-
-    // Format data untuk grafik JavaFX (Algo-021):
-    //   Panggil hitungStatistikTotal()
-    //   Return data dalam format siap render chart
-    public Object ambilDataVisualisasi(String filterPeriode);
+    public void hitungStatistik(DataPohon dataPohon, DataPenanaman dataPenanaman);
+    public void getDataPohon();
+    public void getDataPenanaman();
+    public void ambilData();
+    public void terapkanFilter(String filterPeriode);
+    public void teruskanKeView(Object statistik);
 }
+```
+
+**Algoritma:**
+
+Algo-071 `hitungStatistik(dataPohon, dataPenanaman)`:
+```
+totalPohon <- SUM(dataPenanaman.jumlahPohon)
+totalKarbon <- SUM(dataPenanaman.estimasiKarbon)
+statistik <- { totalPohon, totalKarbon, dataPohon, dataPenanaman }
+RETURN statistik
+```
+
+Algo-072 `getDataPohon()`:
+```
+result <- DataPohon.getDataPohon()
+RETURN result
+```
+
+Algo-073 `getDataPenanaman()`:
+```
+result <- DataPenanaman.getDataPenanaman()
+RETURN result
+```
+
+Algo-074 `ambilData()`:
+```
+dataPohon <- getDataPohon()
+dataPenanaman <- getDataPenanaman()
+statistik <- hitungStatistik(dataPohon, dataPenanaman)
+teruskanKeView(statistik)
+RETURN statistik
+```
+
+Algo-075 `terapkanFilter(filterPeriode)`:
+```
+dataPenanaman <- DO QUERY Q-012
+dataPohon <- getDataPohon()
+statistik <- hitungStatistik(dataPohon, dataPenanaman)
+teruskanKeView(statistik)
+RETURN statistik
+```
+
+Algo-076 `teruskanKeView(statistik)`:
+```
+RETURN statistik
 ```
 
 ---
@@ -1066,215 +751,342 @@ class StatistikController {
 ### 7.1 PenanamanRepository
 ```java
 class PenanamanRepository {
-    public List<DataPenanaman> findAll();      // Q-001
-    public boolean save(DataPenanaman d);      // Q-002
-    public boolean update(DataPenanaman d);    // Q-003
-    public boolean delete(String idPenanaman); // Q-004
+    public List<DataPenanaman> findAll();
+    public DataPenanaman findById(String id);
+    public boolean save(DataPenanaman d);
+    public boolean update(DataPenanaman d);
+    public boolean delete(String idPenanaman);
 }
 ```
 
 ### 7.2 PohonRepository
 ```java
 class PohonRepository {
-    public List<DataPohon> findAll();          // Q-005
-    public boolean save(DataPohon d);          // Q-006
-    public DataPohon findById(String id);      // Q-007
-    public boolean update(DataPohon d);        // Q-008
-    public boolean delete(String id);          // Q-009
-    public DataPohon findByNama(String nama);  // Q-010
+    public List<DataPohon> findAll();
+    public DataPohon findByIdOrNama(String q);
+    public boolean save(DataPohon d);
+    public boolean update(DataPohon d);
+    public boolean delete(String id);
 }
 ```
 
 ### 7.3 LaporanRepository
 ```java
 class LaporanRepository {
-    public boolean save(LaporanPohon l);           // Q-011
-    public List<LaporanPohon> getHistoryLaporan(); // Q-012
+    public boolean save(LaporanPohon l);
 }
 ```
 
 ---
 
-## 8. SQL QUERIES LENGKAP
+## 8. SQL QUERIES
 
-| Kode | SQL | Keterangan |
-|---|---|---|
-| Q-001 | `SELECT * FROM data_penanaman ORDER BY tanggal_penanaman DESC;` | Semua data penanaman |
-| Q-002 | `INSERT INTO data_penanaman (id_penanaman, lokasi, jenis_pohon, jumlah_pohon, tanggal_penanaman, estimasi_karbon) VALUES (?, ?, ?, ?, ?, ?);` | Simpan penanaman baru |
-| Q-003 | `UPDATE data_penanaman SET lokasi=?, jenis_pohon=?, jumlah_pohon=?, tanggal_penanaman=?, estimasi_karbon=? WHERE id_penanaman=?;` | Update penanaman |
-| Q-004 | `DELETE FROM data_penanaman WHERE id_penanaman=?;` | Hapus penanaman |
-| Q-005 | `SELECT * FROM data_pohon ORDER BY nama_pohon ASC;` | Semua data pohon |
-| Q-006 | `INSERT INTO data_pohon (id_pohon, nama_pohon, serapan_karbon, status, file_foto) VALUES (?, ?, ?, ?, ?);` | Simpan pohon baru |
-| Q-007 | `SELECT * FROM data_pohon WHERE id_pohon=?;` | Detail pohon by ID |
-| Q-008 | `UPDATE data_pohon SET nama_pohon=?, serapan_karbon=?, status=?, file_foto=? WHERE id_pohon=?;` | Update pohon |
-| Q-009 | `DELETE FROM data_pohon WHERE id_pohon=?;` | Hapus pohon |
-| Q-010 | `SELECT * FROM data_pohon WHERE nama_pohon=?;` | Cari pohon by nama (untuk hitung karbon) |
-| Q-011 | `INSERT INTO laporan_pohon (id_laporan, id_pohon, kondisi, lokasi, file_foto, estimasi_karbon, tanggal_laporan) VALUES (?, ?, ?, ?, ?, ?, ?);` | Simpan laporan |
-| Q-012 | `SELECT * FROM laporan_pohon ORDER BY tanggal_laporan DESC;` | Riwayat laporan |
-| Q-013 | `SELECT SUM(jumlah_pohon) AS total_pohon, SUM(estimasi_karbon) AS total_karbon FROM data_penanaman;` | Statistik total tanpa filter |
-| Q-014 | `SELECT SUM(jumlah_pohon) AS total_pohon, SUM(estimasi_karbon) AS total_karbon FROM data_penanaman WHERE tanggal_penanaman BETWEEN ? AND ?;` | Statistik dengan filter periode |
-| Q-015 | `SELECT lokasi, SUM(jumlah_pohon) AS total_pohon FROM data_penanaman GROUP BY lokasi;` | Statistik per lokasi |
+| Kode | SQL | Keterangan | Kelas |
+|---|---|---|---|
+| Q-001 | `SELECT * FROM data_penanaman ORDER BY tanggal DESC;` | Ambil semua penanaman | DataPenanaman |
+| Q-002 | `SELECT * FROM data_penanaman WHERE id_penanaman = ?;` | Cari penanaman by ID | DataPenanaman |
+| Q-003 | `INSERT INTO data_penanaman (id_penanaman, lokasi, jenis_pohon, jumlah_pohon, tanggal, estimasi_karbon) VALUES (?, ?, ?, ?, ?, ?);` | Simpan penanaman | DataPenanaman |
+| Q-004 | `UPDATE data_penanaman SET lokasi=?, jenis_pohon=?, jumlah_pohon=?, tanggal=?, estimasi_karbon=? WHERE id_penanaman=?;` | Update penanaman | DataPenanaman |
+| Q-005 | `DELETE FROM data_penanaman WHERE id_penanaman=?;` | Hapus penanaman | DataPenanaman |
+| Q-006 | `INSERT INTO laporan_pohon (id_laporan, kondisi, lokasi, file_foto, estimasi_karbon) VALUES (?, ?, ?, ?, ?);` | Simpan laporan | LaporanPohon |
+| Q-007 | `SELECT * FROM data_pohon ORDER BY nama_pohon ASC;` | Ambil semua pohon | DataPohon |
+| Q-008 | `SELECT * FROM data_pohon WHERE id_pohon=? OR nama_pohon ILIKE ?;` | Cari pohon | DataPohon |
+| Q-009 | `INSERT INTO data_pohon (id_pohon, nama_pohon, usia, lokasi, serapan_karbon, file_foto) VALUES (?, ?, ?, ?, ?, ?);` | Simpan pohon | DataPohon |
+| Q-010 | `UPDATE data_pohon SET nama_pohon=?, usia=?, lokasi=?, serapan_karbon=?, file_foto=? WHERE id_pohon=?;` | Update pohon | DataPohon |
+| Q-011 | `DELETE FROM data_pohon WHERE id_pohon=?;` | Hapus pohon | DataPohon |
+| Q-012 | `SELECT * FROM data_penanaman WHERE tanggal BETWEEN ? AND ? ORDER BY tanggal ASC;` | Filter by periode | StatistikController |
+| Q-013 | `SELECT SUM(jumlah_pohon) AS total_pohon, SUM(estimasi_karbon) AS total_karbon FROM data_penanaman;` | Total statistik | StatistikController |
 
 ---
 
-## 9. ALGORITMA LENGKAP (Pseudocode)
+## 9. ALGORITMA LENGKAP
 
-### Algo-001 — User.pilihMenu()
+### Algo-001 — User.pilihMenuPenanaman()
 ```
-pilihMenu(menuTujuan):
-  IF menuTujuan NULL OR ""  → return "Menu tidak valid"
-  IF "Data Penanaman"       → open HalamanDataPenanaman
-  IF "Data Pohon"           → open HalamanDataPohon
-  IF "Laporan Pohon"        → open FormLaporanPohon
-  IF "Statistik"            → open HalamanStatistik
-  ELSE                      → return "Menu tidak ditemukan"
+pilihMenuPenanaman():
+  HalamanDataPenanaman.ambilDataPenanaman()
 ```
 
-### Algo-003 — PenanamanController.hitungEstimasi()
+### Algo-002 — User.lihatDataPohon()
 ```
-hitungEstimasi(jenisPohon, jumlahPohon):
-  IF jenisPohon NULL OR jumlahPohon <= 0 → error
-  dataPohon ← Q-010 (WHERE nama_pohon = jenisPohon)
-  IF dataPohon EMPTY → error "pohon tidak ditemukan"
-  estimasiKarbon = jumlahPohon * dataPohon.serapanKarbon
-  return estimasiKarbon
+lihatDataPohon():
+  HalamanDataPohon.ambilDataPohon()
 ```
 
-### Algo-004 — PenanamanController.simpanDataPenanaman()
+### Algo-003 — User.lihatStatistik()
 ```
-simpanDataPenanaman(data):
-  IF validasiInput(data) == FALSE → error
-  data.estimasiKarbon = hitungEstimasi(data.jenisPohon, data.jumlahPohon)
-  result ← Q-002
-  return result == SUCCESS ? "Berhasil" : "Gagal"
+lihatStatistik():
+  HalamanStatistik.ambilData()
 ```
 
-### Algo-010 — PohonController.validasiData()
+### Algo-004 — User.kirimLaporan(dataInput, fileFoto)
 ```
-validasiData(dataPohon):
-  IF namaPohon NULL OR ""  → return FALSE
-  IF serapanKarbon < 0     → return FALSE
-  return TRUE
+kirimLaporan(dataInput, fileFoto):
+  FormLaporanPohon.prosesLaporan(dataInput, fileFoto)
 ```
 
-### Algo-015 — LaporanPohonController.prosesLaporan()
+### Algo-005 — User.pilihOpsiKelolaData(opsi)
 ```
-prosesLaporan(dataLaporan):
-  IF kondisi NULL OR lokasi NULL → error "Data belum lengkap"
-  IF fileFoto NOT NULL:
-    filePath = PohonController.prosesSimpanFoto(fileFoto)
-    dataLaporan.fileFoto = filePath
-  dataLaporan.estimasiKarbon = hitungKapasitasBaru(dataLaporan)
-  result ← Q-011
-  return result == SUCCESS ? SUCCESS : FAILED
+pilihOpsiKelolaData(opsi):
+  IF opsi = "Tambah" OR opsi = "Ubah" OR opsi = "Hapus"
+    RETURN opsi
+  ELSE
+    RETURN "Opsi tidak valid"
+  END IF
 ```
 
-### Algo-020 — StatistikController.hitungStatistikTotal()
+### Algo-006 — User.isiDataPenanaman(dataPenanaman)
 ```
-hitungStatistikTotal(filterPeriode):
-  IF filterPeriode NULL → statistikData ← Q-013
-  ELSE                  → statistikData ← Q-014
-  totalPohon       = SUM(jumlah_pohon)
-  totalSerapan     = SUM(estimasi_karbon)
-  return { totalPohon, totalSerapanKarbon, filterPeriode }
+isiDataPenanaman(dataPenanaman):
+  FormLaporanPenanaman.kumpulkanDataInput(dataPenanaman)
 ```
 
-### Algo-021 — StatistikController.ambilDataVisualisasi()
+### Algo-007 — User.unggahFoto(fileFoto)
 ```
-ambilDataVisualisasi(filterPeriode):
-  statistik = hitungStatistikTotal(filterPeriode)
-  IF statistik NOT EMPTY → format ke data grafik JavaFX → return
-  ELSE                   → return EMPTY DATA
+unggahFoto(fileFoto):
+  IF fileFoto NOT NULL
+    RETURN fileFoto
+  ELSE
+    RETURN "Foto belum dipilih"
+  END IF
+```
+
+### Algo-008 — User.isiDataPohon(dataPohon)
+```
+isiDataPohon(dataPohon):
+  FormDataPohon.prosesInputPohon(dataPohon)
+```
+
+### Algo-009 — User.simpanData(data, jenisData)
+```
+simpanData(data, jenisData):
+  IF jenisData = "penanaman"
+    PenanamanController.simpanDataPenanaman(data)
+  ELSE IF jenisData = "pohon"
+    DataPohonController.simpanDataPohon(data)
+  END IF
+```
+
+### Algo-010 — User.konfirmasiHapus(idData)
+```
+konfirmasiHapus(idData):
+  IF data dengan idData DITEMUKAN
+    RETURN "Hapus disetujui"
+  ELSE
+    RETURN "Data tidak ditemukan"
+  END IF
+```
+
+### Algo-011 — HalamanDataPenanaman.ambilDataPenanaman()
+```
+ambilDataPenanaman():
+  dataPenanamanList <- PenanamanController.ambilDataPenanaman()
+  IF dataPenanamanList IS NOT EMPTY THEN
+    tampilkanData(dataPenanamanList)
+  ELSE
+    tampilkanPesanError("Data penanaman belum tersedia")
+  END IF
+```
+
+### Algo-014 — DataPenanaman.cariData(idPenanaman)
+```
+cariData(idPenanaman):
+  IF idPenanaman IS NULL
+    Q-001
+  ELSE
+    Q-002
+  END IF
+```
+
+### Algo-019 — FormLaporanPohon.validasiData(dataInput)
+```
+validasiData(dataInput):
+  IF dataInput.kondisi IS NULL OR dataInput.lokasi IS NULL
+    RETURN FALSE
+  ELSE
+    RETURN TRUE
+  END IF
+```
+
+### Algo-020 — FormLaporanPohon.prosesLaporan(dataInput, fileFoto)
+```
+prosesLaporan(dataInput, fileFoto):
+  IF validasiData(dataInput) = TRUE THEN
+    dataInput.fileFoto <- fileFoto
+    result <- LaporanPohonController.prosesLaporan(dataInput)
+    tampilkanStatus(result)
+  ELSE
+    tampilkanStatus("Data laporan belum lengkap")
+  END IF
+```
+
+### Algo-043 — FormLaporanPenanaman.validasiData(dataPenanaman)
+```
+validasiData(dataPenanaman):
+  IF dataPenanaman.lokasi IS NULL OR dataPenanaman.jenisPohon IS NULL OR dataPenanaman.jumlahPohon <= 0
+    RETURN FALSE
+  ELSE
+    RETURN TRUE
+  END IF
+```
+
+### Algo-046 — FormDataPohon.validasiFile(file)
+```
+validasiFile(file):
+  IF file IS NULL
+    RETURN FALSE
+  ELSE
+    RETURN TRUE
+  END IF
+```
+
+### Algo-047 — FormDataPohon.validasiData(dataInput)
+```
+validasiData(dataInput):
+  IF dataInput.namaPohon IS NULL OR dataInput.usia < 0 OR dataInput.serapanKarbon < 0
+    RETURN FALSE
+  ELSE
+    RETURN TRUE
+  END IF
 ```
 
 ---
 
-## 10. USE CASE SUMMARY
+## 10. USE CASE MAPPING
 
 | UC | Nama | Boundary | Controller | Entity |
 |---|---|---|---|---|
 | UC01 | Melihat Data Penanaman | HalamanDataPenanaman | PenanamanController | DataPenanaman |
 | UC02 | Melaporkan Pohon Rusak | FormLaporanPohon | LaporanPohonController | LaporanPohon |
-| UC03 | Melihat Data Pohon | HalamanDataPohon | PohonController (DataPohonController) | DataPohon |
-| UC04 | Melihat Statistik Serapan Karbon | HalamanStatistik | StatistikController | DataPohon, DataPenanaman |
-| UC05 | Mengelola Data Penanaman (CRUD) | FormLaporanPenanaman | PenanamanController | DataPenanaman |
-| UC06 | Menginput Foto dan Data Pohon | FormDataPohon | PohonController | DataPohon |
-| UC07 | Mengelola Data Pohon (CRUD) | HalamanDataPohon, FormDataPohon | PohonController | DataPohon |
+| UC03 | Melihat Data Pohon | HalamanDataPohon | DataPohonController | DataPohon |
+| UC04 | Melihat Statistik | HalamanStatistik | StatistikController | DataPohon, DataPenanaman |
+| UC05 | Mengelola Data Penanaman | FormLaporanPenanaman | PenanamanController | DataPenanaman |
+| UC06 | Menginput Foto dan Data Pohon | FormDataPohon | DataPohonController | DataPohon |
+| UC07 | Mengelola Data Pohon | HalamanDataPohon, FormDataPohon | DataPohonController | DataPohon |
 | UC08 | Memfilter Statistik | HalamanStatistik | StatistikController | DataPenanaman, DataPohon |
 
 ---
 
-## 11. SEQUENCE FLOWS RINGKAS
+## 11. SEQUENCE FLOWS
 
 ### UC01 — Normal
 ```
-User → pilihMenuPenanaman() → HalamanDataPenanaman
-HalamanDataPenanaman → ambilDataPenanaman() → PenanamanController
-PenanamanController → cariData() → DataPenanaman
-DataPenanaman → dataPenanaman → PenanamanController
-PenanamanController → dataPenanaman → HalamanDataPenanaman
-HalamanDataPenanaman → tampilkanData() → User
+User.pilihMenuPenanaman()
+→ HalamanDataPenanaman.ambilDataPenanaman()
+→ PenanamanController.ambilDataPenanaman()
+→ DataPenanaman.cariData() / getDataPenanaman()
+← dataPenanaman
+← dataPenanaman
+→ HalamanDataPenanaman.tampilkanData()
+← User
 ```
 
 ### UC01 — Data Kosong
 ```
-... → DataPenanaman → dataKosong → PenanamanController
-PenanamanController → dataKosong → HalamanDataPenanaman
-HalamanDataPenanaman → tampilkanPesanError() → User
+... → DataPenanaman.cariData() → dataKosong
+← dataKosong → PenanamanController → HalamanDataPenanaman
+→ HalamanDataPenanaman.tampilkanPesanError()
 ```
 
 ### UC02 — Normal
 ```
-User → isiLaporan() + unggahFoto() → FormLaporanPohon
-FormLaporanPohon → kumpulkanDataInput()
-User → kirimLaporan() → FormLaporanPohon
-FormLaporanPohon → validasiData()
-FormLaporanPohon → prosesLaporan(dataInput, fileFoto) → LaporanPohonController
-LaporanPohonController → hitungEstimasiKarbon()
-LaporanPohonController → simpanLaporan() → LaporanPohon
-LaporanPohon → statusSimpan → LaporanPohonController
-LaporanPohonController → laporanBerhasil → FormLaporanPohon
-FormLaporanPohon → tampilkanStatus() → User
+User.isiLaporan() + User.unggahFoto()
+→ FormLaporanPohon.kumpulkanDataInput()
+User.kirimLaporan()
+→ FormLaporanPohon.validasiData()
+→ FormLaporanPohon.prosesLaporan(dataInput, fileFoto)
+→ LaporanPohonController.prosesLaporan(dataLaporan)
+→ LaporanPohonController.hitungEstimasiKarbon()
+→ LaporanPohon.simpanLaporan()
+← statusSimpan
+← laporanBerhasil
+→ FormLaporanPohon.tampilkanStatus()
 ```
 
 ### UC02 — Data Tidak Lengkap
 ```
-User → kirimLaporan() → FormLaporanPohon
-FormLaporanPohon → validasiData() → GAGAL
-FormLaporanPohon → tampilkanStatus("Data tidak lengkap") → User
+User.kirimLaporan()
+→ FormLaporanPohon.validasiData() → GAGAL
+→ FormLaporanPohon.tampilkanStatus("Data laporan belum lengkap")
 ```
 
 ### UC03 — Normal
 ```
-User → lihatDataPohon() → HalamanDataPohon
-HalamanDataPohon → ambilDataPohon() → PohonController
-PohonController → cariDataPohon() → DataPohon
-DataPohon → daftarPohon → PohonController → HalamanDataPohon → tampilkanData() → User
-User → pilihDataPohon() → HalamanDataPohon
-HalamanDataPohon → ambilDetailPohon(idPohon) → PohonController
-PohonController → cariDataPohon(idPohon) → DataPohon
-DataPohon → detailPohon → PohonController → HalamanDataPohon → tampilkanData() → User
+User.lihatDataPohon()
+→ HalamanDataPohon.ambilDataPohon()
+→ DataPohonController.ambilDataPohon()
+→ DataPohon.cariDataPohon() / getDataPohon()
+← daftarPohon
+→ HalamanDataPohon.tampilkanData()
+User.pilihDataPohon()
+→ HalamanDataPohon.ambilDetailPohon(idPohon)
+→ DataPohonController.ambilDetailPohon(idPohon)
+→ DataPohon.cariDataPohon(idPohon)
+← detailPohon
+→ HalamanDataPohon.tampilkanData()
 ```
 
 ### UC04 — Tanpa Filter
 ```
-User → lihatStatistik() → HalamanStatistik
-HalamanStatistik → ambilData() → StatistikController
-StatistikController → getDataPohon() → DataPohon → dataPohon
-StatistikController → getDataPenanaman() → DataPenanaman → dataPenanaman
-StatistikController → hitungStatistik()
-StatistikController → hasilStatistik → HalamanStatistik
-HalamanStatistik → tampilkanStatistik() → User
+User.lihatStatistik()
+→ HalamanStatistik.ambilData()
+→ StatistikController.ambilData()
+→ DataPohon.getDataPohon() → dataPohon
+→ DataPenanaman.getDataPenanaman() → dataPenanaman
+→ StatistikController.hitungStatistik()
+← hasilStatistik
+→ HalamanStatistik.tampilkanStatistik()
 ```
 
-### UC08 — Dengan Filter Periode
+### UC08 — Filter Periode
 ```
-User → pilihFilterPeriode() → HalamanStatistik
-HalamanStatistik → terapkanFilter(filter) → StatistikController
-StatistikController → getDataFiltered() → DataPenanaman
-StatistikController → getDataFiltered() → DataPohon
-StatistikController → hitungStatistik()
-StatistikController → updateGrafik() → HalamanStatistik → tampilkan grafik → User
+User.pilihFilterPeriode()
+→ HalamanStatistik.pilihPeriode(filter)
+→ StatistikController.terapkanFilter(filter)
+→ DataPenanaman [Q-012]
+→ DataPohon.getDataPohon()
+→ StatistikController.hitungStatistik()
+→ StatistikController.teruskanKeView()
+→ HalamanStatistik.perbaruiTampilan()
+→ tampilkan grafik
+```
+
+### UC05 — Normal
+```
+User.pilihOpsiKelolaData()
+→ FormLaporanPenanaman.tampilkanForm()
+User.isiDataPenanaman()
+→ FormLaporanPenanaman.simpanDataPenanaman(data)
+→ PenanamanController.validasiData()
+→ DataPenanaman.simpanData() → status
+→ FormLaporanPenanaman.tampilkanStatus("berhasil")
+← tampilkan pesan
+```
+
+### UC06 — Normal
+```
+→ FormDataPohon.tampilkanForm()
+User.unggahFoto()
+User.isiDataPohon()
+→ FormDataPohon.prosesInputPohon(data)
+→ DataPohonController.validasiData()
+→ DataPohon.simpanFoto(file)
+→ DataPohon.simpanDataPohon(data) → status
+→ FormDataPohon.tampilkanStatus("berhasil"/"gagal")
+```
+
+### UC07 — Normal
+```
+User.pilihOpsiKelolaData()
+→ HalamanDataPohon.tampilkanDaftar()
+User.pilihTambah/Edit()
+→ FormDataPohon.tampilkanForm()
+User.isiDataPohon()
+→ DataPohonController.simpanDataPohon(data)
+→ DataPohonController.validasiData()
+→ DataPohon.simpanData() → status
+→ FormDataPohon.tampilkanStatus()
+→ HalamanDataPohon.refreshData()
 ```
 
 ---
@@ -1284,51 +1096,80 @@ StatistikController → updateGrafik() → HalamanStatistik → tampilkan grafik
 ### Boundary Layer
 ```
 HalamanStatistik
-  + tampilkanGrafik(filterPeriode: String): void
-  + pilihFilterPeriode(): void
+  + ambilData(): void
+  + tampilkanStatistik(data: Object): void
+  + pilihPeriode(periode: String): void
+  + tampilkanGrafik(data: Object): void
+  + perbaruiTampilan(data: Object): void
+  + tampilkanPesanError(pesan: String): void
 
 HalamanDataPohon
-  + tampilkanDaftarPohon(): void
-  + tampilkanDetailPohon(): void
+  + ambilDataPohon(): void
+  + tampilkanData(dataPohonList: List): void
+  + tampilkanDaftar(): void
+  + hapusData(idPohon: String): void
+  + tampilkanPesanError(pesan: String): void
 
 HalamanDataPenanaman
-  + tampilkanDaftarPenanaman(): void
-  + tampilkanFormInput(): void
+  + ambilDataPenanaman(): void
+  + tampilkanData(data: List): void
+  + tampilkanPesanError(pesan: String): void
 
 FormLaporanPohon
-  + tampilkanFormLaporan(): void
-  + kirimDataLaporan(data: LaporanPohon): void
+  + validasiData(dataInput: Object): boolean
+  + prosesLaporan(dataInput: Object, fileFoto: File): void
+  + tampilkanStatus(status: String): void
 
 FormDataPohon
   + tampilkanForm(): void
-  + unggahFoto(): void
-  + isiDataPohon(): void
+  + validasiFile(file: File): boolean
+  + validasiData(dataInput: Object): boolean
+  + prosesInputPohon(data: Object): void
+  + simpanDataPohon(data: Object): void
+  + tampilkanStatus(status: String): void
+
+FormLaporanPenanaman
+  + tampilkanForm(): void
+  + kumpulkanDataInput(data: DataPenanaman): void
+  + validasiData(data: DataPenanaman): boolean
+  + tampilkanStatus(status: String): void
 ```
 
 ### Controller Layer
 ```
 PenanamanController
-  + getDataPenanaman(): List<DataPenanaman>
-  + validasiInput(data: DataPenanaman): boolean
-  + hitungEstimasi(jenisPohon: String, jumlahPohon: int): float
-  + simpanDataPenanaman(data: DataPenanaman): String
+  + cariData(idPenanaman: String): void
+  + ambilDataPenanaman(): void
+  + simpanDataPenanaman(data: DataPenanaman): void
+  + ubahDataPenanaman(data: DataPenanaman): void
+  + hapusDataPenanaman(id: String): void
+  + hitungEstimasiKarbon(data: DataPenanaman): float
+  + teruskanKeView(result: Object): void
 
-PohonController  (alias DataPohonController)
-  + getDataPohon(): List<DataPohon>
-  + validasiData(data: DataPohon): boolean
-  + prosesSimpanFoto(file: File): String
-  + simpanDataPohon(data: DataPohon): String
-  + getDetailPohon(idPohon: String): DataPohon
-  + updateDataPohon(data: DataPohon): String
-  + hapusDataPohon(idPohon: String): String
+DataPohonController
+  + cariDataPohon(kriteria: String): void
+  + ambilDetailPohon(idPohon: String): void
+  + ambilDataPohon(): void
+  + prosesInputPohon(data: Object): void
+  + simpanDataPohon(data: Object): void
+  + ubahDataPohon(data: Object): void
+  + hapusDataPohon(idPohon: String): void
+  + simpanFoto(file: File): void
+  + validasiData(data: Object): boolean
+  + tampilkanStatus(status: String): void
 
 LaporanPohonController
-  + prosesLaporan(data: LaporanPohon): String
-  + hitungKapasitasBaru(data: LaporanPohon): float
+  + prosesLaporan(dataLaporan: LaporanPohon): void
+  + hitungEstimasiKarbon(data: LaporanPohon): float
+  + simpanLaporan(dataLaporan: LaporanPohon): void
 
 StatistikController
-  + hitungStatistikTotal(filterPeriode: String): Map<String, Object>
-  + ambilDataVisualisasi(filterPeriode: String): Object
+  + hitungStatistik(dp: DataPohon, dpt: DataPenanaman): void
+  + getDataPohon(): void
+  + getDataPenanaman(): void
+  + ambilData(): void
+  + terapkanFilter(filterPeriode: String): void
+  + teruskanKeView(statistik: Object): void
 ```
 
 ### Entity Layer
@@ -1337,30 +1178,52 @@ User
   - idUser: String
   - nama: String
   - role: String
-  + pilihMenu(menuTujuan: String): void
+  + pilihMenuPenanaman(): void
+  + lihatDataPohon(): void
+  + lihatStatistik(): void
+  + kirimLaporan(dataInput: Object, fileFoto: File): void
+  + pilihOpsiKelolaData(opsi: String): String
+  + isiDataPenanaman(dataPenanaman: DataPenanaman): void
+  + unggahFoto(fileFoto: File): Object
+  + isiDataPohon(dataPohon: Object): void
+  + simpanData(data: Object, jenisData: String): void
+  + konfirmasiHapus(idData: String): String
 
 DataPohon
   - idPohon: String
   - namaPohon: String
+  - usia: int
+  - lokasi: String
   - serapanKarbon: float
-  - status: String
-  - fileFotoPath: String
+  - fileFoto: String
+  + cariDataPohon(kriteria: String): void
+  + getDataPohon(): void
+  + simpanData(data: DataPohon): void
+  + ubahData(data: DataPohon): void
+  + hapusData(idPohon: String): void
+  + simpanDataPohon(data: Object): void
+  + simpanFoto(file: File): void
 
 DataPenanaman
   - idPenanaman: String
   - lokasi: String
   - jenisPohon: String
   - jumlahPohon: int
-  - tanggalPenanaman: String
+  - tanggal: Date
   - estimasiKarbon: float
+  + cariData(idPenanaman: String): void
+  + simpanData(data: DataPenanaman): void
+  + ubahData(data: DataPenanaman): void
+  + hapusData(idPenanaman: String): void
+  + getDataPenanaman(): void
 
 LaporanPohon
   - idLaporan: String
   - kondisi: String
   - lokasi: String
-  - fileFotoPath: String
+  - fileFoto: String
   - estimasiKarbon: float
-  - tanggalLaporan: String
+  + simpanLaporan(data: LaporanPohon): void
 ```
 
 ---
@@ -1369,17 +1232,14 @@ LaporanPohon
 
 ### DBConnection.java
 ```java
-// Singleton JDBC connection ke PostgreSQL
 class DBConnection {
     private static Connection instance;
     public static Connection getConnection();
-    // config: host, port, dbname, user, password dari config file
 }
 ```
 
 ### FileManager.java
 ```java
-// Mengelola penyimpanan foto dan ekspor laporan ke local folder
 class FileManager {
     public static String saveFoto(File sourceFile, String destDir);
     public static boolean deleteFile(String filePath);
@@ -1408,20 +1268,27 @@ class FileManager {
 | C-10 FormDataPohon | FormDataPohon | UC06, UC07 |
 | C-11 PenanamanController | PenanamanController | UC01, UC05 |
 | C-12 LaporanPohonController | LaporanPohonController | UC02 |
-| C-13 DataPohonController | PohonController | UC03, UC06, UC07 |
+| C-13 DataPohonController | DataPohonController | UC03, UC06, UC07 |
 | C-14 StatistikController | StatistikController | UC04, UC08 |
 
 ---
 
 ## 15. NOTES & CONSTRAINTS
 
-1. **Aplikasi desktop single-user** — tidak ada authentication kompleks, cukup `User` entity sederhana.
-2. **Foto pohon** disimpan di local folder (bukan DB), DB hanya menyimpan path string-nya.
-3. **Statechart tidak diimplementasikan** — perubahan status pohon (rusak/mati/ditebang) langsung dieksekusi ke DB tanpa state machine.
-4. **Estimasi karbon dihitung otomatis** saat menyimpan penanaman baru maupun laporan kondisi pohon.
-5. **Filter statistik** bisa berdasarkan periode waktu (tanggal mulai — tanggal akhir) atau tanpa filter (semua data).
-6. **Ekspor laporan** (PDF/CSV) disimpan ke local folder via `FileManager`.
-7. **JavaFX Charts** digunakan untuk `Line Chart` (jumlah pohon) dan `Bar Chart` (serapan karbon) di `HalamanStatistik`.
-8. Semua query menggunakan **PreparedStatement** (parameterized) untuk menghindari SQL injection.
-9. `id_*` fields menggunakan **UUID** yang di-generate di Java sebelum INSERT.
-10. Tidak ada fitur login/autentikasi berdasarkan dokumen DPPL — jika diperlukan, tambahkan sebagai extension.
+1. **Aplikasi desktop single-user** — tidak ada authentication kompleks.
+2. **Foto pohon** disimpan di local folder, DB hanya menyimpan path.
+3. **Estimasi karbon dihitung otomatis** saat menyimpan penanaman baru maupun laporan.
+4. **Filter statistik** berdasarkan periode waktu atau tanpa filter.
+5. **JavaFX Charts** untuk Line Chart dan Bar Chart di HalamanStatistik.
+6. Semua query menggunakan **PreparedStatement**.
+7. `id_*` fields menggunakan **UUID**.
+8. **Controller langsung panggil Entity** — PDF tidak menyebut Repository layer secara eksplisit.
+9. **`DataPohon.cariDataPohon(jenisPohon)`** cari by nama pohon (bukan ID).
+10. **Q-008**: `WHERE id_pohon = ? OR nama_pohon ILIKE ?` — satu query untuk dua kebutuhan.
+11. **`FormLaporanPenanaman`** boundary terpisah untuk input penanaman. **`HalamanDataPenanaman`** hanya display list.
+12. **`prosesLaporan()`** di `FormLaporanPohon` set `fileFoto` ke `dataInput.fileFoto` SEBELUM kirim ke controller.
+13. **`hitungEstimasiKarbon()`** berbeda:
+    - LaporanPohonController: ditebang=0, rusak=*0.5, else=sama
+    - PenanamanController: jumlahPohon * serapanKarbon
+14. **Status/kondisi laporan**: `"ditebang"`, `"rusak"`, `"mati"` (lowercase).
+15. **UI/estetika/warna TIDAK DIUBAH** — color palette, spacing, layout tetap sama.
