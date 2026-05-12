@@ -1399,6 +1399,26 @@ LaporanPohon (C-05)
 
 ---
 
+## 12. AUTHENTICATION / LOGIN
+
+EcoTrack menyediakan halaman login ringan untuk memilih akun pengguna dari tabel `user`.
+
+- Tipe autentikasi: pilih identitas (no password) — cocok untuk deployment internal atau demo. Untuk autentikasi berbasis password, tambahkan kolom `password` pada tabel `user` dan perbarui controller/UI.
+- Boundary: `LoginPage` — modal JavaFX yang menampilkan daftar akun (nama + role) dan tombol "Masuk". Tema visual mengikuti `UIConstants` (`CONTENT_BG` untuk latar, `ACCENT_LIME` untuk tombol). Ini menjaga konsistensi warna dengan halaman lain.
+- Controller: `UserController` menyediakan `findAll()` dan `findById()` untuk membaca akun dari DB.
+- Util: `Session` menyimpan `currentUser` setelah login agar boundary/controller lain mengakses identitas saat runtime.
+- DB seed: `db/init.sql` menyertakan akun `user-001` (Admin EcoTrack) dan `user-002` (Petugas Default).
+
+Flow:
+1. Aplikasi memanggil `LoginPage.showLogin(primaryStage)` pada startup.
+2. Pengguna memilih akun lalu menekan `Masuk`.
+3. `Session.setCurrentUser(user)` dipanggil; jika batal, aplikasi keluar.
+4. UI utama dimuat setelah login berhasil.
+
+Keamanan dan pengembangan lanjut:
+- Untuk produksi dengan banyak pengguna, tambahkan password dan hashing, atau integrasi SSO/LDAP sesuai kebijakan organisasi.
+
+
 ## 12. UTIL CLASSES
 
 ### DBConnection.java

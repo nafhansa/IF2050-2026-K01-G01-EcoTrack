@@ -1,6 +1,8 @@
 package com.ecotrack;
 
 import com.ecotrack.boundary.*;
+import com.ecotrack.boundary.LoginPage;
+import com.ecotrack.util.Session;
 import com.ecotrack.controller.*;
 import com.ecotrack.util.UIConstants;
 import javafx.application.Application;
@@ -24,6 +26,14 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        // Tampilkan login dialog terlebih dahulu
+        com.ecotrack.entity.User logged = LoginPage.showLogin(primaryStage);
+        if (logged == null) {
+            // user batal atau tidak ada akun => keluar aplikasi
+            System.exit(0);
+        }
+        Session.setCurrentUser(logged);
+
         initializeControllers();
 
         root = new BorderPane();
@@ -60,6 +70,11 @@ public class Main extends Application {
         Label logo = new Label("\uD83C\uDF3F EcoTrack");
         logo.setStyle("-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: " + UIConstants.SIDEBAR_LOGO_COLOR);
         logo.setPadding(new Insets(0, 0, 24, 12));
+
+        // tampilkan nama user di sidebar
+        Label userLabel = new Label(Session.getCurrentUser() != null ? Session.getCurrentUser().getNama() : "");
+        userLabel.setStyle("-fx-text-fill: " + UIConstants.SIDEBAR_INACTIVE_TEXT + "; -fx-padding: 0 0 12 12;");
+        sidebar.getChildren().add(userLabel);
 
         sidebar.getChildren().add(logo);
 

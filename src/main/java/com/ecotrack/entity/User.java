@@ -6,6 +6,7 @@ public class User {
     private String idUser;
     private String nama;
     private String role;
+    private String password;
 
     public String getIdUser() { return idUser; }
     public void setIdUser(String idUser) { this.idUser = idUser; }
@@ -15,6 +16,9 @@ public class User {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
     public void pilihMenuPenanaman() {
         // Algo-001: HalamanDataPenanaman.ambilDataPenanaman()

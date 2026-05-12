@@ -44,6 +44,7 @@
 ## PHASE 6 — MAIN & NAVIGATION
 
 - [x] `Main.java` — Uses `DataPohonController` (bukan `PohonController`). No repository references. No `.env` loading. Clean controller initialization.
+- [x] `LoginPage` — Modal login implemented; `UserController` + `Session` added; `Main` shows login first and displays current user in sidebar. Password-based login implemented (development plaintext passwords seeded in `db/init.sql`).
 
 ---
 

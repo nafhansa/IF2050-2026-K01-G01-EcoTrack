@@ -5,7 +5,8 @@
 CREATE TABLE IF NOT EXISTS "user" (
     id_user   VARCHAR PRIMARY KEY,
     nama      VARCHAR NOT NULL,
-    role      VARCHAR NOT NULL
+    role      VARCHAR NOT NULL,
+    password  VARCHAR NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS data_pohon (
@@ -45,6 +46,11 @@ CREATE TABLE IF NOT EXISTS laporan_pohon (
     created_at      TIMESTAMP DEFAULT NOW()
 );
 
-INSERT INTO "user" (id_user, nama, role)
-VALUES ('user-001', 'Admin EcoTrack', 'admin')
+-- Seed default users with simple passwords (development)
+INSERT INTO "user" (id_user, nama, role, password)
+VALUES ('user-001', 'Admin EcoTrack', 'admin', 'adminpass')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO "user" (id_user, nama, role, password)
+VALUES ('user-002', 'Petugas Default', 'petugas', 'petugaspass')
 ON CONFLICT DO NOTHING;
