@@ -10,9 +10,11 @@ public class UIConstants {
     // =============================================
 
     // Sidebar
-    public static final String SIDEBAR_BG = "#1B3A2D";
-    public static final String SIDEBAR_ACTIVE_BG = "#A8E063";
-    public static final String SIDEBAR_INACTIVE_TEXT = "#FFFFFFB3";
+    public static final String SIDEBAR_BG = "#0F766E";
+    public static final String SIDEBAR_GRADIENT = "linear-gradient(to bottom right, #0F766E, #094C63)";
+    public static final String SIDEBAR_ACTIVE_BG = "#A3E635";
+    public static final String SIDEBAR_ACTIVE_TEXT = "#052E16";
+    public static final String SIDEBAR_INACTIVE_TEXT = "#CBFBF1";
     public static final String SIDEBAR_LOGO_COLOR = "#FFFFFF";
 
     // Content
@@ -98,7 +100,7 @@ public class UIConstants {
     // SPACING & SIZING
     // =============================================
 
-    public static final double SIDEBAR_WIDTH = 220;
+    public static final double SIDEBAR_WIDTH = 256;
     public static final double GAP_CARD = 16;
     public static final double PADDING_CONTENT = 24;
     public static final double PADDING_MODAL = 24;
@@ -122,12 +124,5 @@ public class UIConstants {
         "Data Pohon",
         "Data Penanaman",
         "Lapor Kondisi Pohon"
-    };
-
-    public static final String[] MENU_ICONS = {
-        "\uD83D\uDCCA",
-        "\uD83C\uDF33",
-        "\uD83C\uDF3F",
-        "\uD83D\uDCCB"
     };
 }
