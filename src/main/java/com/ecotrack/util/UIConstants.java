@@ -18,7 +18,7 @@ public class UIConstants {
     public static final String SIDEBAR_LOGO_COLOR = "#FFFFFF";
 
     // Content
-    public static final String CONTENT_BG = "#F0FAF5";
+    public static final String CONTENT_BG = "#ECFFFB";
     public static final String CARD_BG_WHITE = "#FFFFFF";
 
     // Card Gradients
@@ -28,15 +28,15 @@ public class UIConstants {
     public static final String CARD_TEAL_GRADIENT_END = "#1B4A4A";
 
     // Accents
-    public static final String ACCENT_LIME = "#A8E063";
+    public static final String ACCENT_LIME = "#A3E635";
     public static final String ACCENT_LIME_HOVER = "#95D14F";
     public static final String ACCENT_TEAL = "#26A69A";
     public static final String ACCENT_TEAL_DARK = "#00897B";
     public static final String ACCENT_RED = "#EF5350";
 
     // Text
-    public static final String TEXT_PAGE_TITLE = "#1B3A2D";
-    public static final String TEXT_SUBTITLE = "#6B9080";
+    public static final String TEXT_PAGE_TITLE = "#115E59";
+    public static final String TEXT_SUBTITLE = "#0D9488";
     public static final String TEXT_TABLE_HEADER = "#9E9E9E";
     public static final String TEXT_TABLE_DATA = "#212121";
 
@@ -78,8 +78,8 @@ public class UIConstants {
     // FONT SIZES
     // =============================================
 
-    public static final double FONT_PAGE_TITLE = 22;
-    public static final double FONT_SUBTITLE = 12;
+    public static final double FONT_PAGE_TITLE = 30;
+    public static final double FONT_SUBTITLE = 14;
     public static final double FONT_CARD_NUMBER = 36;
     public static final double FONT_CARD_LABEL = 12;
     public static final double FONT_TABLE_HEADER = 11;
@@ -93,7 +93,7 @@ public class UIConstants {
 
     public static final double RADIUS_CARD = 16;
     public static final double RADIUS_MODAL = 12;
-    public static final double RADIUS_BUTTON = 8;
+    public static final double RADIUS_BUTTON = 14;
     public static final double RADIUS_INPUT = 8;
 
     // =============================================
@@ -101,7 +101,7 @@ public class UIConstants {
     // =============================================
 
     public static final double SIDEBAR_WIDTH = 256;
-    public static final double GAP_CARD = 16;
+    public static final double GAP_CARD = 24;
     public static final double PADDING_CONTENT = 24;
     public static final double PADDING_MODAL = 24;
     public static final double MODAL_WIDTH = 400;
