@@ -106,5 +106,9 @@ public class HalamanDataPenanaman extends BorderPane {
 
     public void tampilkanFormInput() {
         // Show modal form input penanaman
+        FormLaporanPenanaman formModal = new FormLaporanPenanaman(controller);
+        formModal.tampilkanForm();
+        
+        ambilDataPenanaman();
     }
 }

@@ -1,70 +1,76 @@
 package com.ecotrack.controller;
 
-import com.ecotrack.entity.DataPohon;
-import com.ecotrack.util.FileManager;
-
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
-public class DataPohonController {
+import com.ecotrack.entity.DataPohon;
 
-    public void cariDataPohon(String kriteria) {
+public class DataPohonController {
+private DataPohon modelPohon = new DataPohon(); // Menginstansiasi Entity langsung
+
+    public List<DataPohon> cariDataPohon(String kriteria) {
         // Algo-061: result <- DataPohon.cariDataPohon(kriteria)
+        modelPohon.cariDataPohon(kriteria);
+        return modelPohon.getDataPohon();
     }
 
     public void ambilDetailPohon(String idPohon) {
-        // Algo-062: result <- DataPohon.cariDataPohon(idPohon)
+        // Algo-062: DataPohon.cariDataPohon(idPohon)
+        modelPohon.cariDataPohon(idPohon);
     }
 
     public List<DataPohon> ambilDataPohon() {
         // Algo-063: result <- DataPohon.getDataPohon()
-        return new ArrayList<>();
+        return modelPohon.getDataPohon();
     }
 
     public String prosesInputPohon(Object data) {
         // Algo-064
+        String result;
         if (validasiData(data)) {
-            return simpanDataPohon(data);
+            result = simpanDataPohon(data);
         } else {
-            return "Data pohon tidak valid";
+            result = "Data pohon tidak valid";
         }
-    }
+        return tampilkanStatus(result);    }
 
     public String simpanDataPohon(Object data) {
         // Algo-065
         if (data instanceof DataPohon) {
             DataPohon d = (DataPohon) data;
             if (d.getFileFoto() != null) {
-                File fotoFile = FileManager.getFile(d.getFileFoto());
-                if (fotoFile != null) {
-                    String path = simpanFoto(fotoFile);
-                    d.setFileFoto(path);
-                }
+                File file = new File(d.getFileFoto());
+                d.setFileFoto(simpanFoto(file));
             }
+            modelPohon.simpanData(d); 
+            
+            return "Berhasil menyimpan data pohon ke database!";
         }
-        return "Berhasil";
+        return "Gagal: Data tidak valid";
     }
 
     public void ubahDataPohon(Object data) {
         // Algo-066
-        if (validasiData(data)) {
-            // DataPohon.ubahData(data)
-        }
+        DataPohon d = (DataPohon) data;
+            if (d.getFileFoto() != null) {
+                File file = new File(d.getFileFoto());
+                d.setFileFoto(simpanFoto(file));
+            }
+            modelPohon.simpanData(d);
     }
 
     public void hapusDataPohon(String idPohon) {
         // Algo-067: result <- DataPohon.hapusData(idPohon)
-    }
+        modelPohon.hapusData(idPohon);    }
 
     public String simpanFoto(File file) {
         // Algo-068: result <- DataPohon.simpanFoto(file)
-        return FileManager.saveFoto(file, FileManager.getFotoDir());
-    }
+        modelPohon.simpanFoto(file);
+        return file.getName();    }
 
     public boolean validasiData(Object data) {
         // Algo-069
-        if (data instanceof DataPohon) {
+       if (data instanceof DataPohon) {
             DataPohon d = (DataPohon) data;
             if (d.getNamaPohon() == null || d.getNamaPohon().isEmpty()) return false;
             if (d.getUsia() < 0) return false;

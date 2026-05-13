@@ -78,10 +78,19 @@ public class HalamanDataPohon extends BorderPane {
                 btnDelete.setStyle("-fx-text-fill: " + UIConstants.ACCENT_RED);
                 btnEdit.setOnAction(e -> {
                     DataPohon data = getTableView().getItems().get(getIndex());
-                });
+                    FormDataPohon formModal = new FormDataPohon(controller);
+                    formModal.setEditData(data);
+                    formModal.tampilkanForm();
+                    ambilDataPohon();});
+
                 btnDelete.setOnAction(e -> {
                     DataPohon data = getTableView().getItems().get(getIndex());
-                    hapusData(data.getIdPohon());
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Apakah Anda yakin ingin menghapus data pohon ini?", ButtonType.YES, ButtonType.NO);
+                    alert.showAndWait().ifPresent(buttonType -> {
+                        if (buttonType == ButtonType.YES) {
+                            hapusData(data.getIdPohon());
+                        }
+                    });
                 });
             }
 
@@ -103,6 +112,7 @@ public class HalamanDataPohon extends BorderPane {
     public void ambilDataPohon() {
         // Algo-023
         List<DataPohon> dataPohonList = controller.ambilDataPohon();
+        tabelPohon.getItems().clear();
         if (dataPohonList != null && !dataPohonList.isEmpty()) {
             tampilkanData(dataPohonList);
         } else {
@@ -136,5 +146,9 @@ public class HalamanDataPohon extends BorderPane {
 
     public void tampilkanModalTambah() {
         // Show modal untuk tambah pohon
+        FormDataPohon formModal = new FormDataPohon(controller);
+        formModal.tampilkanForm();
+        
+        ambilDataPohon();
     }
 }
