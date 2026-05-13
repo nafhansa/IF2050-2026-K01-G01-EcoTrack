@@ -17,8 +17,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class HalamanStatistik extends BorderPane {
@@ -272,12 +271,12 @@ public class HalamanStatistik extends BorderPane {
 
         // ── Left: Line chart – Jumlah Pohon ─────────────────────────────────────
         VBox lineChartCard = buildChartCard(buildLineChart(dataStatistik));
-        lineChartCard.getChildren().add(0, buildChartHeader("Jumlah Pohon", "Pertumbuhan pohon yang ditanam"));
+        lineChartCard.getChildren().add(0, buildChartHeader("Jumlah Pohon", "Jumlah pohon yang ditanam per bulan"));
         HBox.setHgrow(lineChartCard, Priority.ALWAYS);
 
         // ── Right: Bar chart – Serapan Karbon ───────────────────────────────────
         VBox barChartCard = buildChartCard(buildBarChart(dataStatistik));
-        barChartCard.getChildren().add(0, buildChartHeader("Serapan Karbon", "Estimasi penyerapan CO₂ (kg/tahun)"));
+        barChartCard.getChildren().add(0, buildChartHeader("Serapan Karbon", "Estimasi serapan CO₂ per bulan (kg)"));
         HBox.setHgrow(barChartCard, Priority.ALWAYS);
 
         chartsRow.getChildren().addAll(lineChartCard, barChartCard);
@@ -307,7 +306,7 @@ public class HalamanStatistik extends BorderPane {
         return new VBox(2, titleLbl, subtitleLbl);
     }
 
-    /** Line chart – Jumlah pohon per lokasi (pakai data penanaman sebagai proxy bulan) */
+    /** Line chart – Jumlah pohon per bulan */
     private LineChart<String, Number> buildLineChart(Map<String, Object> dataStatistik) {
         List<DataPenanaman> dataPenanaman =
                 (List<DataPenanaman>) dataStatistik.get("dataPenanaman");
@@ -332,16 +331,24 @@ public class HalamanStatistik extends BorderPane {
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
 
-        // Group by lokasi, sum jumlah pohon per lokasi as data points
-        Map<String, Long> pohonPerLokasi = dataPenanaman.stream()
-                .collect(Collectors.groupingBy(DataPenanaman::getLokasi, Collectors.counting()));
+        String[] bulanLabels = {"Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+                                 "Jul", "Agu", "Sep", "Okt", "Nov", "Des"};
 
-        pohonPerLokasi.forEach((lokasi, count) ->
-                series.getData().add(new XYChart.Data<>(shortenLabel(lokasi), count)));
+        Map<Integer, Integer> pohonPerBulan = new TreeMap<>();
+        for (DataPenanaman dp : dataPenanaman) {
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.setTime(dp.getTanggal());
+            int m = cal.get(java.util.Calendar.MONTH) + 1;
+            pohonPerBulan.merge(m, dp.getJumlahPohon(), Integer::sum);
+        }
+
+        for (int m = 1; m <= 12; m++) {
+            int count = pohonPerBulan.getOrDefault(m, 0);
+            series.getData().add(new XYChart.Data<>(bulanLabels[m - 1], count));
+        }
 
         lineChart.getData().add(series);
 
-        // Style the line green
         lineChart.applyCss();
         lineChart.layout();
 
@@ -361,7 +368,7 @@ public class HalamanStatistik extends BorderPane {
         return lineChart;
     }
 
-    /** Bar chart – Estimasi karbon per lokasi */
+    /** Bar chart – Estimasi karbon per bulan */
     private BarChart<String, Number> buildBarChart(Map<String, Object> dataStatistik) {
         List<DataPenanaman> dataPenanaman =
                 (List<DataPenanaman>) dataStatistik.get("dataPenanaman");
@@ -385,14 +392,21 @@ public class HalamanStatistik extends BorderPane {
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
 
-        // Group karbon per lokasi
-        Map<String, Double> karbonPerLokasi = dataPenanaman.stream()
-                .collect(Collectors.groupingBy(
-                        DataPenanaman::getLokasi,
-                        Collectors.summingDouble(DataPenanaman::getEstimasiKarbon)));
+        String[] bulanLabels = {"Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+                                 "Jul", "Agu", "Sep", "Okt", "Nov", "Des"};
 
-        karbonPerLokasi.forEach((lokasi, karbon) ->
-                series.getData().add(new XYChart.Data<>(shortenLabel(lokasi), karbon)));
+        Map<Integer, Double> karbonPerBulan = new TreeMap<>();
+        for (DataPenanaman dp : dataPenanaman) {
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.setTime(dp.getTanggal());
+            int m = cal.get(java.util.Calendar.MONTH) + 1;
+            karbonPerBulan.merge(m, (double) dp.getEstimasiKarbon(), Double::sum);
+        }
+
+        for (int m = 1; m <= 12; m++) {
+            double val = karbonPerBulan.getOrDefault(m, 0.0);
+            series.getData().add(new XYChart.Data<>(bulanLabels[m - 1], val));
+        }
 
         barChart.getData().add(series);
 
