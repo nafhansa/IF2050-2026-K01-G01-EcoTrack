@@ -49,13 +49,14 @@ public class DataPohonController {
 
     public void ubahDataPohon(Object data) {
         // Algo-066
-        if (validasiData(data)) {
-            // DataPohon.ubahData(data)
+        if (data instanceof DataPohon) {
+            ((DataPohon) data).getDataPohon();
         }
     }
 
     public void hapusDataPohon(String idPohon) {
         // Algo-067: result <- DataPohon.hapusData(idPohon)
+        new DataPohon().hapusData(idPohon);
     }
 
     public String simpanFoto(File file) {

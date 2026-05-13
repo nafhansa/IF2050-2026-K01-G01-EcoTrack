@@ -86,10 +86,33 @@ public class DataPohon {
 
     public void ubahData(DataPohon data) {
         // Q-010: UPDATE data_pohon
+        String sql = "UPDATE data_pohon SET nama_pohon = ?, usia = ?, serapan_karbon = ?, file_foto = ? WHERE id_pohon = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, this.namaPohon);
+            pstmt.setInt(2, this.usia);
+            pstmt.setFloat(3, this.serapanKarbon);
+            pstmt.setString(4, this.fileFoto);
+            pstmt.setString(5, this.idPohon);
+            
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void hapusData(String idPohon) {
         // Q-011: DELETE FROM data_pohon WHERE id_pohon=?
+        String sql = "DELETE FROM data_pohon WHERE id_pohon = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, idPohon);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void simpanDataPohon(Object data) {

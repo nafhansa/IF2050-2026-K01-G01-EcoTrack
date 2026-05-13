@@ -23,9 +23,16 @@ public class FormDataPohon {
     private final DataPohonController controller;
     private Stage modalStage;
     private String fileFotoPath;
+    private boolean isEditMode = false;
+    private DataPohon existingData;
 
     public FormDataPohon(DataPohonController controller) {
         this.controller = controller;
+    }
+
+    public void setEditData(DataPohon data) {
+        this.isEditMode = true;
+        this.existingData = data;
     }
 
     public void tampilkanForm() {
@@ -96,6 +103,44 @@ public class FormDataPohon {
         Scene scene = new Scene(form, UIConstants.MODAL_WIDTH, 500);
         modalStage.setScene(scene);
         modalStage.showAndWait();
+
+        if (isEditMode) {
+            fieldNama.setText(existingData.getNamaPohon());
+            fieldUsia.setText(String.valueOf(existingData.getUsia()));
+            fieldSerapan.setText(String.valueOf(existingData.getSerapanKarbon()));
+            title.setText("Edit Data Pohon");
+            btnTambah.setText("Simpan Perubahan");
+        }
+
+        btnTambah.setOnAction(e -> {
+            DataPohon data = isEditMode ? existingData : new DataPohon();
+            data.setNamaPohon(fieldNama.getText());
+            try {
+                data.setUsia(Integer.parseInt(fieldUsia.getText()));
+            } catch (NumberFormatException ex) {
+                data.setUsia(0);
+            }
+            try {
+                data.setSerapanKarbon(Float.parseFloat(fieldSerapan.getText()));
+            } catch (NumberFormatException ex) {
+                data.setSerapanKarbon(0);
+            }
+            if (fileFotoPath != null) {
+                data.setFileFoto(fileFotoPath);
+            }
+            if (isEditMode) {
+                controller.ubahDataPohon(data);
+                tampilkanStatus("Berhasil memperbarui data!");
+            } else {
+                controller.simpanDataPohon(data);
+                tampilkanStatus("Berhasil menambah pohon!");
+            }
+            tutupModal();
+
+            dataInput = data;
+            prosesInputPohon(data);
+        });
+
     }
 
     public boolean validasiFile(File file) {
