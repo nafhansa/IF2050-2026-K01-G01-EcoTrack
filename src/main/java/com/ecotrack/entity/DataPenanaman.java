@@ -47,12 +47,12 @@ public class DataPenanaman {
         try (Connection conn = DBConnection.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            pstmt.setString(1, java.util.UUID.randomUUID().toString());
-            pstmt.setString(2, this.lokasi);
-            pstmt.setString(3, this.jenisPohon);
-            pstmt.setInt(4, this.jumlahPohon);
-            pstmt.setDate(5, new java.sql.Date(this.tanggal.getTime()));
-            pstmt.setFloat(6, this.estimasiKarbon);
+            
+            pstmt.setString(1, this.lokasi);
+            pstmt.setString(2, this.jenisPohon);
+            pstmt.setInt(3, this.jumlahPohon);
+            pstmt.setDate(4, new java.sql.Date(this.tanggal.getTime()));
+            pstmt.setFloat(5, this.estimasiKarbon);
             
             pstmt.executeUpdate();
         } catch (SQLException e) {
