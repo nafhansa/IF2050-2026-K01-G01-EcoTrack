@@ -56,7 +56,7 @@ private DataPohon modelPohon = new DataPohon(); // Menginstansiasi Entity langsu
                 File file = new File(d.getFileFoto());
                 d.setFileFoto(simpanFoto(file));
             }
-            modelPohon.simpanData(d);
+            modelPohon.ubahData(d);
     }
 
     public void hapusDataPohon(String idPohon) {
@@ -75,8 +75,9 @@ private DataPohon modelPohon = new DataPohon(); // Menginstansiasi Entity langsu
             if (d.getNamaPohon() == null || d.getNamaPohon().isEmpty()) return false;
             if (d.getUsia() < 0) return false;
             if (d.getSerapanKarbon() < 0) return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     public String tampilkanStatus(String status) {

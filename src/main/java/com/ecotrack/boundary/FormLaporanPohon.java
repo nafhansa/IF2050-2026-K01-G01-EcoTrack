@@ -266,6 +266,7 @@ public class FormLaporanPohon extends BorderPane {
             }
             String result = controller.prosesLaporan((LaporanPohon) dataInput);
             tampilkanStatus(result);
+            tampilkanRiwayatLaporan();
         } else {
             tampilkanStatus("Data laporan belum lengkap");
         }
@@ -278,7 +279,38 @@ public class FormLaporanPohon extends BorderPane {
     }
 
     public void tampilkanRiwayatLaporan() {
+        List<LaporanPohon> laporanList = controller.ambilDataLaporan();
         riwayatList.getItems().clear();
+        if (laporanList != null && !laporanList.isEmpty()) {
+            riwayatList.getItems().addAll(laporanList);
+            riwayatList.setCellFactory(lv -> new ListCell<>() {
+                @Override
+                protected void updateItem(LaporanPohon item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setGraphic(null);
+                        setText(null);
+                    } else {
+                        VBox cell = new VBox(4);
+                        cell.setPadding(new Insets(12));
+                        cell.setStyle("-fx-background-color: #F0FDFA; -fx-background-radius: 12; -fx-border-color: #CCFBF1; -fx-border-radius: 12; -fx-border-width: 1;");
+
+                        Label kondisiLbl = new Label(item.getKondisi());
+                        kondisiLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #115E59;");
+
+                        Label lokasiLbl = new Label(item.getLokasi());
+                        lokasiLbl.setStyle("-fx-font-size: 12px; -fx-text-fill: #0D9488;");
+
+                        Label karbonLbl = new Label(String.format("Estimasi Karbon: %.1f kg", item.getEstimasiKarbon()));
+                        karbonLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: #5EEAD4;");
+
+                        cell.getChildren().addAll(kondisiLbl, lokasiLbl, karbonLbl);
+                        setGraphic(cell);
+                        setText(null);
+                    }
+                }
+            });
+        }
     }
 
     public void handleFileUpload(VBox uploadArea) {

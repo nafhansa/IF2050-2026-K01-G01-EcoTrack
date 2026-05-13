@@ -56,13 +56,13 @@ public class DataPenanaman {
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, java.util.UUID.randomUUID().toString());
-            pstmt.setString(2, this.idUser);
-            pstmt.setString(3, this.idPohon);
-            pstmt.setString(4, this.lokasi);
-            pstmt.setString(5, this.jenisPohon);
-            pstmt.setInt(6, this.jumlahPohon);
-            pstmt.setDate(7, new java.sql.Date(this.tanggal.getTime()));
-            pstmt.setFloat(8, this.estimasiKarbon);
+            pstmt.setString(2, data.getIdUser());
+            pstmt.setString(3, data.getIdPohon());
+            pstmt.setString(4, data.getLokasi());
+            pstmt.setString(5, data.getJenisPohon());
+            pstmt.setInt(6, data.getJumlahPohon());
+            pstmt.setDate(7, new java.sql.Date(data.getTanggal().getTime()));
+            pstmt.setFloat(8, data.getEstimasiKarbon());
             
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -72,10 +72,36 @@ public class DataPenanaman {
 
     public void ubahData(DataPenanaman data) {
         // Q-004: UPDATE data_penanaman
+        String sql = "UPDATE data_penanaman SET id_user = ?, id_pohon = ?, lokasi = ?, jenis_pohon = ?, jumlah_pohon = ?, tanggal_penanaman = ?, estimasi_karbon = ? WHERE id_penanaman = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, data.getIdUser());
+            pstmt.setString(2, data.getIdPohon());
+            pstmt.setString(3, data.getLokasi());
+            pstmt.setString(4, data.getJenisPohon());
+            pstmt.setInt(5, data.getJumlahPohon());
+            pstmt.setDate(6, new java.sql.Date(data.getTanggal().getTime()));
+            pstmt.setFloat(7, data.getEstimasiKarbon());
+            pstmt.setString(8, data.getIdPenanaman());
+            
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Gagal ubah penanaman: " + e.getMessage());
+        }
     }
 
     public void hapusData(String idPenanaman) {
         // Q-005: DELETE FROM data_penanaman
+        String sql = "DELETE FROM data_penanaman WHERE id_penanaman = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, idPenanaman);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Gagal hapus penanaman: " + e.getMessage());
+        }
     }
 
     public List<DataPenanaman> getDataPenanaman() {

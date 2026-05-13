@@ -1,8 +1,12 @@
 package com.ecotrack.controller;
 
+import java.util.List;
+
 import com.ecotrack.entity.LaporanPohon;
 
 public class LaporanPohonController {
+
+    private LaporanPohon modelLaporan = new LaporanPohon();
 
     public String prosesLaporan(LaporanPohon dataLaporan) {
         // Algo-058
@@ -25,5 +29,9 @@ public class LaporanPohonController {
     public String simpanLaporan(LaporanPohon dataLaporan) {
         dataLaporan.simpanLaporan(dataLaporan);
         return "Berhasil menyimpan laporan pohon ke database!";
+    }
+
+    public List<LaporanPohon> ambilDataLaporan() {
+        return modelLaporan.getLaporanPohon();
     }
 }

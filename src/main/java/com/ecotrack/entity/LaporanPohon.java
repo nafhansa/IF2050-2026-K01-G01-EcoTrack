@@ -2,8 +2,12 @@ package com.ecotrack.entity;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.ecotrack.util.DBConnection;
 
@@ -55,5 +59,28 @@ public class LaporanPohon {
         } catch (SQLException e) {
             System.err.println("Gagal simpan laporan pohon: " + e.getMessage());
         }
+    }
+
+    public List<LaporanPohon> getLaporanPohon() {
+        List<LaporanPohon> list = new ArrayList<>();
+        String sql = "SELECT * FROM laporan_pohon ORDER BY tanggal_laporan DESC";
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                LaporanPohon l = new LaporanPohon();
+                l.setIdLaporan(rs.getString("id_laporan"));
+                l.setIdUser(rs.getString("id_user"));
+                l.setIdPohon(rs.getString("id_pohon"));
+                l.setKondisi(rs.getString("kondisi"));
+                l.setLokasi(rs.getString("lokasi"));
+                l.setFileFoto(rs.getString("file_foto"));
+                l.setEstimasiKarbon(rs.getFloat("estimasi_karbon"));
+                list.add(l);
+            }
+        } catch (SQLException e) {
+            System.err.println("Gagal ambil data laporan pohon: " + e.getMessage());
+        }
+        return list;
     }
 }
