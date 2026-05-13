@@ -1,13 +1,15 @@
 package com.ecotrack.controller;
 
-import com.ecotrack.entity.DataPohon;
-import com.ecotrack.entity.DataPenanaman;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.ecotrack.entity.DataPenanaman;
+import com.ecotrack.entity.DataPohon;
+
 public class StatistikController {
+    private DataPohon modelPohon = new DataPohon();
+    private DataPenanaman modelPenanaman = new DataPenanaman();
 
     public Map<String, Object> hitungStatistik(List<DataPohon> dataPohon, List<DataPenanaman> dataPenanaman) {
         // Algo-071
@@ -31,12 +33,12 @@ public class StatistikController {
 
     public List<DataPohon> getDataPohon() {
         // Algo-072: result <- DataPohon.getDataPohon()
-        return new ArrayList<>();
+        return modelPohon.getDataPohon();
     }
 
     public List<DataPenanaman> getDataPenanaman() {
         // Algo-073: result <- DataPenanaman.getDataPenanaman()
-        return new ArrayList<>();
+        return modelPenanaman.getDataPenanaman();
     }
 
     public Map<String, Object> ambilData() {
@@ -57,7 +59,8 @@ public class StatistikController {
         return statistik;
     }
 
-    public void teruskanKeView(Object statistik) {
+    public Object teruskanKeView(Object statistik) {
         // Algo-076
+        return statistik;
     }
 }
