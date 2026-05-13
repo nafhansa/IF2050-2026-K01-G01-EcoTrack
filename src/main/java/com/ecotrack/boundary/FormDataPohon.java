@@ -10,6 +10,9 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import com.ecotrack.util.DBConnection;
+import java.sql.*;
+import java.util.ArrayList;
 
 import java.io.File;
 
@@ -116,6 +119,7 @@ public class FormDataPohon {
         if (validasiData(data)) {
             String result = controller.prosesInputPohon(data);
             tampilkanStatus(result);
+            tutupModal();
         } else {
             tampilkanStatus("Data pohon tidak valid");
         }

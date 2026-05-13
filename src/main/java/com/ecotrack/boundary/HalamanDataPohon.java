@@ -136,5 +136,9 @@ public class HalamanDataPohon extends BorderPane {
 
     public void tampilkanModalTambah() {
         // Show modal untuk tambah pohon
+        FormDataPohon formModal = new FormDataPohon(controller);
+        formModal.tampilkanForm();
+        
+        ambilDataPohon();
     }
 }

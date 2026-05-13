@@ -1,7 +1,15 @@
 package com.ecotrack.entity;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import com.ecotrack.util.DBConnection;
 
 public class DataPenanaman {
     private String idPenanaman;
@@ -35,6 +43,21 @@ public class DataPenanaman {
 
     public void simpanData(DataPenanaman data) {
         // Q-003: INSERT INTO data_penanaman
+        String sql = "INSERT INTO data_penanaman (lokasi, jenis_pohon, jumlah_pohon, tanggal, estimasi_karbon) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = DBConnection.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, java.util.UUID.randomUUID().toString());
+            pstmt.setString(2, this.lokasi);
+            pstmt.setString(3, this.jenisPohon);
+            pstmt.setInt(4, this.jumlahPohon);
+            pstmt.setDate(5, new java.sql.Date(this.tanggal.getTime()));
+            pstmt.setFloat(6, this.estimasiKarbon);
+            
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Gagal simpan penanaman: " + e.getMessage());
+        }
     }
 
     public void ubahData(DataPenanaman data) {
@@ -45,7 +68,25 @@ public class DataPenanaman {
         // Q-005: DELETE FROM data_penanaman
     }
 
-    public void getDataPenanaman() {
+    public List<DataPenanaman> getDataPenanaman() {
         // Q-001: SELECT * FROM data_penanaman ORDER BY tanggal DESC
+        List<DataPenanaman> list = new ArrayList<>();
+        String sql = "SELECT * FROM data_penanaman ORDER BY tanggal DESC";
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                DataPenanaman d = new DataPenanaman();
+                d.setLokasi(rs.getString("lokasi"));
+                d.setJenisPohon(rs.getString("jenis_pohon"));
+                d.setJumlahPohon(rs.getInt("jumlah_pohon"));
+                d.setTanggal(rs.getDate("tanggal"));
+                d.setEstimasiKarbon(rs.getFloat("estimasi_karbon"));
+                list.add(d);
+            }
+        } catch (SQLException e) { 
+            e.printStackTrace(); 
+        }
+        return list;
     }
 }

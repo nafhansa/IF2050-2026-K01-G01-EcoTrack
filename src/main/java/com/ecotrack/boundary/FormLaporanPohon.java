@@ -165,7 +165,7 @@ public class FormLaporanPohon extends BorderPane {
 
         Button btnSimpan = new Button("Simpan Laporan");
         btnSimpan.setPrefHeight(48);
-        btnSimpan.setStyle("-fx-background-color: " + UIConstants.ACCENT_LIME + "; -fx-text-fill: #052E16; -fx-font-weight: bold; -fx-background-radius: " + UIConstants.RADIUS_BUTTON + "; -fx-pref-height: " + UIConstants.BUTTON_HEIGHT + " -fx-effect: dropshadow(gaussian, rgba(163, 230, 53, 0.4), 8, 0, 0, 4);");
+        btnSimpan.setStyle("-fx-background-color: " + UIConstants.ACCENT_LIME + "; -fx-text-fill: #052E16; -fx-font-weight: bold; -fx-background-radius: " + UIConstants.RADIUS_BUTTON + "; -fx-effect: dropshadow(gaussian, rgba(163, 230, 53, 0.4), 8, 0, 0, 4);");
         btnSimpan.setMaxWidth(Double.MAX_VALUE);
 
         btnSimpan.setOnAction(e -> {

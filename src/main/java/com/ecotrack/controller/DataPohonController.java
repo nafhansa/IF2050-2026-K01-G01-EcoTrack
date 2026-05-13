@@ -19,22 +19,19 @@ public class DataPohonController {
 
     public List<DataPohon> ambilDataPohon() {
         // Algo-063: result <- DataPohon.getDataPohon()
-        return new ArrayList<>();
+        return new DataPohon().getDataPohon();
     }
 
     public String prosesInputPohon(Object data) {
         // Algo-064
-        if (validasiData(data)) {
-            return simpanDataPohon(data);
-        } else {
-            return "Data pohon tidak valid";
-        }
+        return simpanDataPohon(data);
     }
 
     public String simpanDataPohon(Object data) {
         // Algo-065
         if (data instanceof DataPohon) {
             DataPohon d = (DataPohon) data;
+            
             if (d.getFileFoto() != null) {
                 File fotoFile = FileManager.getFile(d.getFileFoto());
                 if (fotoFile != null) {
@@ -42,8 +39,12 @@ public class DataPohonController {
                     d.setFileFoto(path);
                 }
             }
+            
+            d.simpanData(d); 
+            
+            return "Berhasil menyimpan data pohon ke database!";
         }
-        return "Berhasil";
+        return "Gagal: Data tidak valid";
     }
 
     public void ubahDataPohon(Object data) {
@@ -64,7 +65,7 @@ public class DataPohonController {
 
     public boolean validasiData(Object data) {
         // Algo-069
-        if (data instanceof DataPohon) {
+       if (data instanceof DataPohon) {
             DataPohon d = (DataPohon) data;
             if (d.getNamaPohon() == null || d.getNamaPohon().isEmpty()) return false;
             if (d.getUsia() < 0) return false;
