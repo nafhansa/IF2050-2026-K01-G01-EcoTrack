@@ -20,6 +20,10 @@ import java.util.List;
 
 public class HalamanDataPenanaman extends BorderPane {
 
+    // Halaman riwayat penanaman.
+    // Menampilkan ringkasan total (kartu) dan tabel riwayat; user dapat menambah
+    // pencatatan penanaman baru atau menghapus riwayat tertentu.
+
     private final PenanamanController controller;
     private TableView<DataPenanaman> tabelPenanaman;
     private Label lblTotalPohonDitanam;
@@ -31,6 +35,7 @@ public class HalamanDataPenanaman extends BorderPane {
     }
 
     private void initialize() {
+        // Susun komponen: header -> kartu ringkasan -> tabel.
         setStyle("-fx-background-color: " + UIConstants.CONTENT_BG);
         setPadding(new Insets(32));
 
@@ -152,6 +157,7 @@ public class HalamanDataPenanaman extends BorderPane {
     }
 
     private void setupTabel() {
+        // Setup kolom tabel + row factory agar styling sesuai desain.
         tabelPenanaman.setRowFactory(tv -> {
             TableRow<DataPenanaman> row = new TableRow<>();
             row.setStyle("-fx-background-color: white; -fx-border-color: transparent transparent #CCFBF1 transparent; -fx-border-width: 1px; -fx-cell-size: 65px;");
@@ -410,6 +416,7 @@ public class HalamanDataPenanaman extends BorderPane {
     }
 
     public void ambilDataPenanaman() {
+        // Ambil data dari controller, isi TableView, lalu hitung total ringkasan.
         List<DataPenanaman> dataList = controller.ambilDataPenanaman();
         tabelPenanaman.getItems().clear(); 
         
@@ -430,11 +437,13 @@ public class HalamanDataPenanaman extends BorderPane {
     }
 
     public void hapusData(String idPenanaman) {
+        // Hapus lalu refresh.
         controller.hapusDataPenanaman(idPenanaman);
         ambilDataPenanaman();
     }
 
     public void tampilkanModalTambah() {
+        // Tampilkan modal input penanaman baru, lalu refresh tabel.
         FormLaporanPenanaman formModal = new FormLaporanPenanaman(controller);
         formModal.tampilkanForm();
         ambilDataPenanaman();

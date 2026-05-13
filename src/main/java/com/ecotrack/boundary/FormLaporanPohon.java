@@ -21,6 +21,10 @@ import java.util.List;
 
 public class FormLaporanPohon extends BorderPane {
 
+    // Halaman/form laporan kondisi pohon.
+    // Layout: panel kiri untuk input laporan, panel kanan untuk riwayat laporan.
+    // Mendukung upload foto lewat file chooser maupun drag & drop.
+
     private String fileFoto;
     private Object dataInput;
 
@@ -34,6 +38,7 @@ public class FormLaporanPohon extends BorderPane {
     }
 
     private void initialize() {
+        // Susun UI utama dan render riwayat.
         setStyle("-fx-background-color: " + UIConstants.CONTENT_BG);
         setPadding(new Insets(32));
 
@@ -77,6 +82,7 @@ public class FormLaporanPohon extends BorderPane {
     }
 
     private VBox createFormPanel() {
+        // Panel input laporan (lokasi, kondisi, catatan, foto, simpan).
         VBox panel = new VBox();
         panel.setPrefWidth(548);
         panel.setMinHeight(885);
@@ -174,6 +180,7 @@ public class FormLaporanPohon extends BorderPane {
         btnSimpan.setMaxWidth(Double.MAX_VALUE);
 
         btnSimpan.setOnAction(e -> {
+            // Mapping input field -> entity laporan.
             LaporanPohon data = new LaporanPohon();
             data.setIdUser(Session.getCurrentUser() != null ? Session.getCurrentUser().getIdUser() : null);
             data.setLokasi(fieldLokasi.getText());
@@ -190,6 +197,7 @@ public class FormLaporanPohon extends BorderPane {
     }
 
     private VBox createRiwayatPanel() {
+        // Panel riwayat laporan (ListView). Saat ini masih placeholder.
        VBox panel = new VBox();
         panel.setPrefWidth(548);
         panel.setMinHeight(885);
@@ -247,6 +255,7 @@ public class FormLaporanPohon extends BorderPane {
     }
 
     public boolean validasiData(Object dataInput) {
+        // Validasi minimal: kondisi dan lokasi wajib ada.
         // Algo-019
         if (dataInput instanceof LaporanPohon) {
             LaporanPohon l = (LaporanPohon) dataInput;
@@ -256,6 +265,7 @@ public class FormLaporanPohon extends BorderPane {
     }
 
     public void prosesLaporan(Object dataInput, File fileFoto) {
+        // Validasi -> lengkapi file foto jika ada -> simpan melalui controller.
         // Algo-020
         if (validasiData(dataInput)) {
             if (dataInput instanceof LaporanPohon) {
@@ -278,10 +288,12 @@ public class FormLaporanPohon extends BorderPane {
     }
 
     public void tampilkanRiwayatLaporan() {
+        // TODO: ambil riwayat dari DB, lalu set item ke ListView.
         riwayatList.getItems().clear();
     }
 
     public void handleFileUpload(VBox uploadArea) {
+        // Upload melalui file chooser (klik area).
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Pilih Foto Bukti");
         fileChooser.getExtensionFilters().addAll(
@@ -296,6 +308,7 @@ public class FormLaporanPohon extends BorderPane {
     }
 
     public void handleDragOver(DragEvent e) {
+        // Handler drag-over untuk mendukung drag & drop file.
         if (e.getDragboard().hasFiles()) {
             e.acceptTransferModes(TransferMode.COPY);
         }
@@ -303,6 +316,7 @@ public class FormLaporanPohon extends BorderPane {
     }
 
     public void handleDrop(DragEvent e) {
+        // Handler drop: ambil file pertama dan validasi ekstensi gambar.
         Dragboard db = e.getDragboard();
         if (db.hasFiles()) {
             File file = db.getFiles().get(0);

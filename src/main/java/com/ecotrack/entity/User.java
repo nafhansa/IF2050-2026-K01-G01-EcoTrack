@@ -3,6 +3,8 @@ package com.ecotrack.entity;
 import java.io.File;
 
 public class User {
+    // Entity user untuk autentikasi sederhana dan penyimpanan session.
+    // Di aplikasi ini, password disimpan apa adanya (plain text) untuk kebutuhan demo.
     private String idUser;
     private String nama;
     private String role;
@@ -37,6 +39,7 @@ public class User {
     }
 
     public String pilihOpsiKelolaData(String opsi) {
+        // Validasi opsi sederhana untuk fitur CRUD.
         // Algo-005
         if (opsi.equals("Tambah") || opsi.equals("Ubah") || opsi.equals("Hapus")) {
             return opsi;
@@ -50,6 +53,7 @@ public class User {
     }
 
     public Object unggahFoto(File fileFoto) {
+        // Helper sederhana: memastikan file tidak null.
         // Algo-007
         if (fileFoto != null) {
             return fileFoto;
@@ -72,6 +76,9 @@ public class User {
     }
 
     public String konfirmasiHapus(String idData) {
+        // Placeholder konfirmasi hapus.
+        // Saat ini selalu menyetujui hapus; implementasi nyata seharusnya
+        // mengecek keberadaan data dulu.
         // Algo-010
         // IF data dengan idData DITEMUKAN
         //   RETURN "Hapus disetujui"

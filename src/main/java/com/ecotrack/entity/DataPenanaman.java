@@ -12,6 +12,8 @@ import java.util.List;
 import com.ecotrack.util.DBConnection;
 
 public class DataPenanaman {
+    // Entity DataPenanaman merepresentasikan tabel data_penanaman.
+    // Menyediakan operasi baca dan simpan data melalui JDBC.
     private String idPenanaman;
     private String idUser;
     private String idPohon;
@@ -46,10 +48,13 @@ public class DataPenanaman {
     public void setEstimasiKarbon(float estimasiKarbon) { this.estimasiKarbon = estimasiKarbon; }
 
     public void cariData(String idPenanaman) {
+        // Placeholder pencarian (belum diimplementasi).
         // Q-001 or Q-002
     }
 
     public void simpanData(DataPenanaman data) {
+        // Insert data penanaman baru.
+        // Catatan: field yang digunakan berasal dari state object saat ini (this).
         // Q-003: INSERT INTO data_penanaman
         String sql = "INSERT INTO data_penanaman (id_penanaman, id_user, id_pohon, lokasi, jenis_pohon, jumlah_pohon, tanggal_penanaman, estimasi_karbon) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
@@ -71,14 +76,17 @@ public class DataPenanaman {
     }
 
     public void ubahData(DataPenanaman data) {
+        // Placeholder update (belum diimplementasi).
         // Q-004: UPDATE data_penanaman
     }
 
     public void hapusData(String idPenanaman) {
+        // Placeholder delete (belum diimplementasi).
         // Q-005: DELETE FROM data_penanaman
     }
 
     public List<DataPenanaman> getDataPenanaman() {
+        // Ambil riwayat penanaman untuk ditampilkan di halaman Data Penanaman.
         // Q-001: SELECT * FROM data_penanaman ORDER BY tanggal DESC
         List<DataPenanaman> list = new ArrayList<>();
         String sql = "SELECT * FROM data_penanaman ORDER BY tanggal_penanaman DESC";

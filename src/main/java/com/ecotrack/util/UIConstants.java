@@ -5,6 +5,9 @@ import java.util.Map;
 
 public class UIConstants {
 
+    // Kumpulan konstanta UI (warna, radius, spacing, teks) agar styling konsisten.
+    // Dipakai oleh hampir semua boundary yang membangun UI secara programatik.
+
     // =============================================
     // COLOR PALETTE
     // =============================================

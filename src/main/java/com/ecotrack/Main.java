@@ -1,5 +1,16 @@
 package com.ecotrack;
 
+/*
+ * Entry point aplikasi JavaFX EcoTrack.
+ *
+ * Tanggung jawab utama kelas ini:
+ * - Menjalankan proses login (modal) sebelum user masuk aplikasi.
+ * - Menyimpan user aktif ke Session.
+ * - Membangun layout utama (sidebar + area konten) dan navigasi menu.
+ * - Melakukan routing sederhana: nama menu -> halaman (boundary) yang ditampilkan.
+ *
+ */
+
 import com.ecotrack.boundary.*;
 import com.ecotrack.boundary.LoginPage;
 import com.ecotrack.util.Session;
@@ -30,6 +41,7 @@ public class Main extends Application {
     private LaporanPohonController laporanController;
     private StatistikController statistikController;
 
+    // Path SVG untuk ikon menu sidebar (1 menu bisa terdiri dari beberapa path).
     private static final String[][] MENU_SVG_PATHS = {
         // 1. Dashboard
         {"M2.5 2.5V15.8333C2.5 16.2754 2.67559 16.6993 2.98816 17.0118C3.30072 17.3244 3.72464 17.5 4.16667 17.5H17.5",
@@ -46,14 +58,18 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        // Tampilkan login dialog terlebih dahulu
+        // 1) Tampilkan login dialog terlebih dahulu (blocking).
+        //    Jika user membatalkan login, aplikasi ditutup.
         com.ecotrack.entity.User logged = LoginPage.showLogin(primaryStage);
         if (logged == null) {
             // user batal atau tidak ada akun => keluar aplikasi
             System.exit(0);
         }
+
+        // 2) Simpan user yang berhasil login untuk dipakai di halaman lain.
         Session.setCurrentUser(logged);
 
+        // 3) Inisialisasi controller (jembatan boundary <-> entity/db).
         initializeControllers();
 
         root = new BorderPane();
@@ -65,6 +81,7 @@ public class Main extends Application {
         contentArea = new StackPane();
         root.setCenter(contentArea);
 
+        // 4) Halaman default saat pertama kali masuk.
         loadPage("Dashboard Statistik");
 
         Scene scene = new Scene(root, 1200, 800);
@@ -74,6 +91,7 @@ public class Main extends Application {
     }
 
     private void initializeControllers() {
+        // Controller dibuat sekali agar bisa dipakai ulang antar halaman.
         pohonController = new DataPohonController();
         penanamanController = new PenanamanController();
         laporanController = new LaporanPohonController();
@@ -81,6 +99,10 @@ public class Main extends Application {
     }
 
     private VBox createSidebar() {
+        // Sidebar berisi:
+        // - Nama user yang sedang login
+        // - Logo/brand
+        // - Tombol menu navigasi
         VBox sidebar = new VBox();
         sidebar.setPrefWidth(UIConstants.SIDEBAR_WIDTH);
         sidebar.setPadding(new Insets(0)); 
@@ -98,7 +120,7 @@ public class Main extends Application {
         headerContainer.setPadding(new Insets(0));
         VBox.setMargin(headerContainer, new Insets(0, 0, 16, 0));
 
-        // tampilkan nama user di sidebar
+        // Tampilkan nama user di sidebar.
         Label userLabel = new Label(Session.getCurrentUser() != null ? Session.getCurrentUser().getNama() : "");
         userLabel.setStyle("-fx-text-fill: " + UIConstants.SIDEBAR_INACTIVE_TEXT + "; -fx-padding: 0 0 12 12;");
         sidebar.getChildren().add(userLabel);
@@ -114,7 +136,7 @@ public class Main extends Application {
         iconBox.setMinSize(40, 40);
         iconBox.setPrefSize(40, 40);
 
-        // logo ecotrack
+        // Logo EcoTrack dibuat dari SVG path supaya konsisten dan scalable.
         Group logoSvg = new Group();
         SVGPath logoP1 = new SVGPath();
         logoP1.setContent("M12 28.5C10.713 28.5029 9.45917 28.0919 8.42364 27.3276C7.38812 26.5634 6.62578 25.4864 6.24918 24.2557C5.87258 23.025 5.90168 21.7059 6.33218 20.493C6.76269 19.2801 7.57178 18.2378 8.64 17.52C7.9814 16.6971 7.58574 15.695 7.50452 14.6441C7.4233 13.5932 7.66028 12.5422 8.18461 11.6279C8.70894 10.7135 9.49635 9.97818 10.4444 9.51751C11.3924 9.05685 12.4571 8.8922 13.5 9.045V9C13.5 7.80653 13.9741 6.66193 14.818 5.81802C15.6619 4.97411 16.8065 4.5 18 4.5C19.1935 4.5 20.3381 4.97411 21.182 5.81802C22.0259 6.66193 22.5 7.80653 22.5 9V9.06C23.5429 8.9072 24.6076 9.07185 25.5556 9.53251C26.5036 9.99318 27.2911 10.7285 27.8154 11.6429C28.3397 12.5572 28.5767 13.6082 28.4955 14.6591C28.4143 15.71 28.0186 16.7121 27.36 17.535C28.4215 18.2553 29.2243 19.2968 29.6504 20.5067C30.0766 21.7167 30.1038 23.0314 29.7279 24.2579C29.3521 25.4844 28.593 26.5582 27.5621 27.3217C26.5313 28.0852 25.2828 28.4981 24 28.5H12Z");
@@ -162,6 +184,7 @@ public class Main extends Application {
                 menuItem.setStyle(baseStyle + "-fx-background-color: " + UIConstants.SIDEBAR_ACTIVE_BG + "; -fx-text-fill: " + UIConstants.SIDEBAR_ACTIVE_TEXT + "; -fx-font-weight: bold;");
                 updateMenuIconColor(menuItem, UIConstants.SIDEBAR_ACTIVE_TEXT);
 
+                // Routing: ganti halaman berdasarkan nama menu.
                 loadPage(menuName);
             });
             menuContainer.getChildren().add(menuItem);
@@ -174,6 +197,7 @@ public class Main extends Application {
     }
 
     private Button createMenuItem(String text, String[] svgPaths, boolean isActive) {
+        // Membuat tombol menu dengan ikon SVG dan state aktif/non-aktif.
         Button btn = new Button(text);
         btn.setUserData(isActive);
         btn.setPrefHeight(44);
@@ -210,6 +234,7 @@ public class Main extends Application {
     }
 
     private void updateMenuIconColor(Button btn, String colorHex) {
+        // Saat state tombol berubah (aktif/non-aktif), warna stroke ikon ikut di-update.
         if (btn.getGraphic() instanceof Group) {
             Group g = (Group) btn.getGraphic();
             for (javafx.scene.Node n : g.getChildren()) {
@@ -221,6 +246,7 @@ public class Main extends Application {
     }
 
     private void loadPage(String menuName) {
+        // Router sederhana: string nama menu -> instance halaman.
         switch (menuName) {
             case "Dashboard Statistik":
                 contentArea.getChildren().setAll(new HalamanStatistik(statistikController));
@@ -240,6 +266,7 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
+        // Bootstrap JavaFX.
         launch(args);
     }
 }

@@ -23,6 +23,10 @@ import java.util.Map;
 public class LoginPage {
 
     public static User showLogin(Stage owner) {
+        // Halaman login ditampilkan sebagai dialog modal.
+        // Return value:
+        // - User terpilih jika login berhasil
+        // - null jika user menutup dialog / batal
         UserController uc = new UserController();
         List<User> users = uc.findAll();
 
@@ -43,6 +47,7 @@ public class LoginPage {
         Label subtitle = new Label("Silakan pilih akun dan masukkan kata sandi");
         subtitle.setStyle("-fx-font-size: 12px; -fx-text-fill: " + UIConstants.TEXT_SUBTITLE + ";");
 
+        // Dropdown menampilkan nama + role, tetapi value sebenarnya disimpan di map.
         ComboBox<String> combo = new ComboBox<>();
         Map<String, User> map = new HashMap<>();
         for (User u : users) {
@@ -69,6 +74,7 @@ public class LoginPage {
 
         final User[] result = new User[1];
 
+        // Saat tombol "Masuk" ditekan, lakukan autentikasi berdasarkan id_user.
         loginBtn.setOnAction(e -> {
             String sel = combo.getSelectionModel().getSelectedItem();
             String entered = pwd.getText();
@@ -78,6 +84,7 @@ public class LoginPage {
                 boolean ok = uc2.authenticate(candidate.getIdUser(), entered);
                 if (ok) {
                     result[0] = candidate;
+                    // Set session agar halaman lain bisa akses user aktif.
                     Session.setCurrentUser(result[0]);
                     dialog.close();
                     return;

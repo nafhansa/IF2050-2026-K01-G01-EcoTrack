@@ -6,6 +6,10 @@ import com.ecotrack.entity.DataPenanaman;
 import com.ecotrack.entity.DataPohon;
 
 public class PenanamanController {
+    // Controller modul penanaman.
+    // - Mengambil daftar penanaman
+    // - Menghitung estimasi karbon
+    // - Menyimpan/mengubah/menghapus data penanaman
     private DataPenanaman modelPenanaman = new DataPenanaman();
     private DataPohon modelPohon = new DataPohon();
 
@@ -15,6 +19,7 @@ public class PenanamanController {
     }
 
     public List<DataPenanaman> ambilDataPenanaman() {
+        // Ambil data penanaman untuk ditampilkan di tabel.
         // Algo-052: result <- DataPenanaman.getDataPenanaman()
         List<DataPenanaman> result = modelPenanaman.getDataPenanaman();
         teruskanKeView(result);
@@ -22,6 +27,7 @@ public class PenanamanController {
     }
 
     public String simpanDataPenanaman(DataPenanaman dataPenanaman) {
+        // Simpan data baru. Estimasi karbon dihitung sebelum insert.
         // Algo-053
         // IF FormLaporanPenanaman.validasiData(dataPenanaman) = TRUE THEN
         if (dataPenanaman instanceof DataPenanaman) {
@@ -52,6 +58,8 @@ public class PenanamanController {
     }
 
     public float hitungEstimasiKarbon(DataPenanaman dataPenanaman) {
+        // Estimasi serapan dihitung dari: jumlah pohon x serapan per pohon.
+        // Serapan per pohon diambil dari master DataPohon berdasarkan nama jenis.
         // Algo-056: dataPohon <- DataPohon.cariDataPohon(dataPenanaman.jenisPohon)
         // estimasiKarbon <- dataPenanaman.jumlahPohon * dataPohon.serapanKarbon
         float serapanPerPohon = 0.0f;

@@ -22,6 +22,9 @@ import java.util.Map;
 
 public class HalamanStatistik extends BorderPane {
 
+    // Halaman dashboard statistik.
+    // Menampilkan ringkasan total (cards) dan grafik bar estimasi karbon per lokasi.
+
     private final StatistikController controller;
     private VBox contentArea;
     private HBox cardsRow;
@@ -37,6 +40,7 @@ public class HalamanStatistik extends BorderPane {
     }
 
     private void initialize() {
+        // Susun layout: header -> ringkasan -> area grafik, lalu ambil data awal.
         setStyle("-fx-background-color: " + UIConstants.CONTENT_BG);
         setPadding(new Insets(UIConstants.PADDING_CONTENT));
 
@@ -99,6 +103,7 @@ public class HalamanStatistik extends BorderPane {
     }
 
     public void ambilData() {
+        // Ambil data dari controller dan refresh UI.
         Map<String, Object> dataStatistik = controller.ambilData();
         if (dataStatistik != null && !dataStatistik.isEmpty()) {
             updateCards(dataStatistik);
@@ -109,6 +114,7 @@ public class HalamanStatistik extends BorderPane {
     }
 
     public void updateCards(Map<String, Object> statistik) {
+        // Render angka ringkasan pada kartu (total pohon, karbon, lokasi, jenis).
         int totalPohon = (int) statistik.get("totalPohon");
         double totalKarbon = (double) statistik.get("totalKarbon");
         List<DataPohon> dataPohon = (List<DataPohon>) statistik.get("dataPohon");
@@ -136,6 +142,7 @@ public class HalamanStatistik extends BorderPane {
     }
 
     public void tampilkanGrafik(Map<String, Object> dataStatistik) {
+        // Render grafik bar: lokasi vs estimasi karbon.
         List<DataPenanaman> dataPenanaman = (List<DataPenanaman>) dataStatistik.get("dataPenanaman");
 
         CategoryAxis xAxis = new CategoryAxis();
@@ -175,6 +182,7 @@ public class HalamanStatistik extends BorderPane {
     }
 
     public void tampilkanPesanError(String pesan) {
+        // Fallback UI jika data kosong.
         Label errorLbl = new Label(pesan);
         errorLbl.setStyle("-fx-font-size: 16px; -fx-text-fill: " + UIConstants.ACCENT_RED + "; -fx-padding: 40 0 0 0;");
         errorLbl.setAlignment(Pos.CENTER);

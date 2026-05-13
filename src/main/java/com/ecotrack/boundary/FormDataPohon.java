@@ -19,6 +19,9 @@ import java.io.File;
 
 public class FormDataPohon {
 
+    // Form modal untuk menambah/mengubah data pohon.
+    // Dibuka dari HalamanDataPohon dan berinteraksi dengan DataPohonController.
+
     private Object dataInput;
 
     private final DataPohonController controller;
@@ -32,11 +35,13 @@ public class FormDataPohon {
     }
 
     public void setEditData(DataPohon data) {
+        // Mengaktifkan mode edit: form akan mengubah data existing.
         this.isEditMode = true;
         this.existingData = data;
     }
 
     public void tampilkanForm() {
+        // Membuat modal, merakit field input, lalu menunggu user menekan simpan/batal.
         // Algo-045
         modalStage = new Stage();
         modalStage.initModality(Modality.APPLICATION_MODAL);
@@ -63,6 +68,7 @@ public class FormDataPohon {
 
         Button btnUpload = new Button("Unggah Foto");
         btnUpload.setStyle("-fx-border-color: #E0E0E0; -fx-background-color: transparent; -fx-text-fill: #424242");
+        // Upload foto: hanya memilih file, belum menyalin ke folder khusus.
         btnUpload.setOnAction(e -> unggahFoto());
 
         Button btnBatal = new Button("Batal");
@@ -84,6 +90,7 @@ public class FormDataPohon {
 
         Scene scene = new Scene(form, UIConstants.MODAL_WIDTH, 500);
         modalStage.setScene(scene);
+        // Catatan: showAndWait() mem-block thread sampai modal ditutup.
         modalStage.showAndWait();
 
         if (isEditMode) {
@@ -95,6 +102,7 @@ public class FormDataPohon {
         }
 
         btnTambah.setOnAction(e -> {
+            // Mapping nilai field -> object DataPohon.
             DataPohon data = isEditMode ? existingData : new DataPohon();
             data.setNamaPohon(fieldNama.getText());
             try {
@@ -162,6 +170,7 @@ public class FormDataPohon {
     }
 
     public void unggahFoto() {
+        // FileChooser untuk memilih file foto lokal.
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Unggah Foto Pohon");
         fileChooser.getExtensionFilters().addAll(
@@ -175,6 +184,7 @@ public class FormDataPohon {
     }
 
     public void tutupModal() {
+        // Helper menutup modal jika masih terbuka.
         if (modalStage != null) {
             modalStage.close();
         }

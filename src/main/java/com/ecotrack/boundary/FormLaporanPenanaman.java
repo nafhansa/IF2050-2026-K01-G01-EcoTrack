@@ -16,6 +16,9 @@ import java.util.Date;
 
 public class FormLaporanPenanaman {
 
+    // Form modal untuk mencatat penanaman baru.
+    // Mengumpulkan input user lalu memanggil controller untuk simpan ke DB.
+
     private final PenanamanController controller;
     private Stage modalStage;
 
@@ -24,6 +27,7 @@ public class FormLaporanPenanaman {
     }
 
     public void tampilkanForm() {
+        // Merakit UI modal input penanaman.
         // Algo-041
         modalStage = new Stage();
         modalStage.initModality(Modality.APPLICATION_MODAL);
@@ -58,6 +62,7 @@ public class FormLaporanPenanaman {
         Button btnSimpan = new Button("Simpan Penanaman");
         btnSimpan.setStyle("-fx-background-color: " + UIConstants.ACCENT_LIME + "; -fx-text-fill: black; -fx-font-weight: bold; -fx-background-radius: " + UIConstants.RADIUS_BUTTON);
         btnSimpan.setOnAction(e -> {
+            // Mapping input field -> entity DataPenanaman.
             DataPenanaman data = new DataPenanaman();
             data.setLokasi(fieldLokasi.getText());
             data.setJenisPohon(fieldJenis.getText());
@@ -88,6 +93,7 @@ public class FormLaporanPenanaman {
     }
 
     public void kumpulkanDataInput(DataPenanaman data) {
+        // Validasi -> simpan -> tampilkan pesan.
         // Algo-042
         if (validasiData(data)) {
             String result = controller.simpanDataPenanaman(data);

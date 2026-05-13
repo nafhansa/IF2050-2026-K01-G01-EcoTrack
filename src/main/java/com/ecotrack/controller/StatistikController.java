@@ -8,10 +8,14 @@ import com.ecotrack.entity.DataPenanaman;
 import com.ecotrack.entity.DataPohon;
 
 public class StatistikController {
+    // Controller untuk halaman dashboard statistik.
+    // Mengambil data pohon + penanaman, lalu merangkum total dan data mentah
+    // yang dibutuhkan view (grafik dan kartu ringkasan).
     private DataPohon modelPohon = new DataPohon();
     private DataPenanaman modelPenanaman = new DataPenanaman();
 
     public Map<String, Object> hitungStatistik(List<DataPohon> dataPohon, List<DataPenanaman> dataPenanaman) {
+        // Menghitung agregasi dasar yang ditampilkan di halaman statistik.
         // Algo-071
         // totalPohon <- SUM(dataPenanaman.jumlahPohon)
         // totalKarbon <- SUM(dataPenanaman.estimasiKarbon)
@@ -42,6 +46,7 @@ public class StatistikController {
     }
 
     public Map<String, Object> ambilData() {
+        // Orkestrasi: ambil data mentah -> hitung statistik -> kirim ke view.
         // Algo-074
         List<DataPohon> dataPohon = getDataPohon();
         List<DataPenanaman> dataPenanaman = getDataPenanaman();

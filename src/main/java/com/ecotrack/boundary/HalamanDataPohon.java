@@ -19,6 +19,9 @@ import java.util.List;
 
 public class HalamanDataPohon extends BorderPane {
 
+    // Halaman master data pohon (jenis pohon).
+    // Menampilkan tabel daftar pohon dan menyediakan aksi tambah/edit/hapus.
+
     private final DataPohonController controller;
     private TableView<DataPohon> table;
     private Label totalLabel;
@@ -40,6 +43,7 @@ public class HalamanDataPohon extends BorderPane {
     }
 
     private void initialize() {
+        // Layout utama: header + badge total + card tabel.
         // Set Background menggunakan UIConstants
         setStyle("-fx-background-color: " + UIConstants.CONTENT_BG);
         setPadding(new Insets(32));
@@ -57,6 +61,7 @@ public class HalamanDataPohon extends BorderPane {
 
     // ─── Main Content ─────────────────────────────────────────────────────────
     private Node buildHeader() {
+        // Header berisi judul halaman dan tombol "Tambah Pohon".
         HBox header = new HBox();
         header.setAlignment(Pos.BOTTOM_CENTER);
         header.setPadding(new Insets(0, 0, 32, 0)); // Sesuai padding Lapor Kondisi
@@ -121,6 +126,7 @@ public class HalamanDataPohon extends BorderPane {
     }
 
     private Node buildTableCard() {
+        // Card yang membungkus TableView (judul + tabel).
         VBox card = new VBox();
         card.setBackground(new Background(new BackgroundFill(
             WHITE, new CornerRadii(16), Insets.EMPTY)));
@@ -154,6 +160,7 @@ public class HalamanDataPohon extends BorderPane {
     // ─── TableView ────────────────────────────────────────────────────────────
     @SuppressWarnings("unchecked")
     private TableView<DataPohon> buildTable() {
+        // Membangun TableView lengkap beserta cell factory untuk tampilan custom.
         TableView<DataPohon> tv = new TableView<>();
         tv.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         tv.setFixedCellSize(69);
@@ -321,6 +328,7 @@ public class HalamanDataPohon extends BorderPane {
 
     // ─── Controller Logics ────────────────────────────────────────────────────
     public void ambilDataPohon() {
+        // Refresh isi tabel dan badge total.
         List<DataPohon> dataPohonList = controller.ambilDataPohon();
         table.getItems().clear();
         if (dataPohonList != null && !dataPohonList.isEmpty()) {
@@ -337,6 +345,7 @@ public class HalamanDataPohon extends BorderPane {
     }
 
     public void tampilkanModalTambah() {
+        // Tampilkan modal input lalu refresh tabel setelah modal ditutup.
         FormDataPohon formModal = new FormDataPohon(controller);
         formModal.tampilkanForm();
         ambilDataPohon();

@@ -8,6 +8,8 @@ import java.time.LocalDate;
 import com.ecotrack.util.DBConnection;
 
 public class LaporanPohon {
+    // Entity laporan kondisi pohon.
+    // Fokus: menyimpan laporan baru ke tabel laporan_pohon.
     private String idLaporan;
     private String idUser;
     private String idPohon;
@@ -38,6 +40,8 @@ public class LaporanPohon {
     public void setEstimasiKarbon(float estimasiKarbon) { this.estimasiKarbon = estimasiKarbon; }
 
     public void simpanLaporan(LaporanPohon data) {
+        // Insert laporan ke database.
+        // tanggal_laporan otomatis memakai tanggal saat ini (LocalDate.now()).
         String sql = "INSERT INTO laporan_pohon (id_laporan, id_user, id_pohon, kondisi, lokasi, file_foto, estimasi_karbon, tanggal_laporan) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {

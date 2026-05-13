@@ -13,6 +13,9 @@ import java.util.List;
 import com.ecotrack.util.DBConnection;
 
 public class DataPohon {
+    // Entity DataPohon merepresentasikan satu baris pada tabel data_pohon.
+    // Selain sebagai model, kelas ini juga memuat operasi CRUD sederhana
+    // menggunakan JDBC (langsung query ke PostgreSQL).
     private String idPohon;
     private String idUser;
     private String namaPohon;
@@ -47,10 +50,13 @@ public class DataPohon {
     public void setFileFoto(String fileFoto) { this.fileFoto = fileFoto; }
 
     public void cariDataPohon(String kriteria) {
+        // Placeholder pencarian data.
+        // Rencana query (lihat komentar): cari berdasarkan id atau nama (ILIKE).
         // Q-008: SELECT * FROM data_pohon WHERE id_pohon=? OR nama_pohon ILIKE ?
     }
 
     public List<DataPohon> getDataPohon() {
+        // Ambil semua data pohon untuk ditampilkan di halaman Data Pohon.
         // Q-007: SELECT * FROM data_pohon ORDER BY nama_pohon ASC
         List<DataPohon> list = new ArrayList<>();
         String sql = "SELECT * FROM data_pohon ORDER BY nama_pohon ASC";
@@ -78,6 +84,8 @@ public class DataPohon {
     }
 
     public void simpanData(DataPohon data) {
+        // Insert data pohon baru.
+        // Id dibuat otomatis menggunakan UUID jika id belum di-set.
         // Q-009: INSERT INTO data_pohon
         String sql = "INSERT INTO data_pohon (id_pohon, id_user, nama_pohon, usia, lokasi, kapasitas_serapan_karbon, status, file_foto_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
@@ -99,6 +107,7 @@ public class DataPohon {
     }
 
     public void ubahData(DataPohon data) {
+        // Update data pohon berdasarkan id_pohon.
         // Q-010: UPDATE data_pohon
         String sql = "UPDATE data_pohon SET id_user = ?, nama_pohon = ?, usia = ?, lokasi = ?, kapasitas_serapan_karbon = ?, status = ?, file_foto_path = ? WHERE id_pohon = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -120,6 +129,7 @@ public class DataPohon {
     }
 
     public void hapusData(String idPohon) {
+        // Hapus data pohon berdasarkan id.
         // Q-011: DELETE FROM data_pohon WHERE id_pohon=?
         String sql = "DELETE FROM data_pohon WHERE id_pohon = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -133,10 +143,13 @@ public class DataPohon {
     }
 
     public void simpanDataPohon(Object data) {
+        // Wrapper untuk simpan data pohon (placeholder untuk kebutuhan desain awal).
         // Wrapper untuk simpan data pohon
     }
 
     public void simpanFoto(File file) {
+        // Placeholder penyimpanan foto.
+        // Saat ini alur upload lebih banyak ditangani di boundary/controller.
         // Simpan foto ke local folder
     }
 }
