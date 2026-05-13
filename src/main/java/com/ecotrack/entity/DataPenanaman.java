@@ -13,6 +13,8 @@ import com.ecotrack.util.DBConnection;
 
 public class DataPenanaman {
     private String idPenanaman;
+    private String idUser;
+    private String idPohon;
     private String lokasi;
     private String jenisPohon;
     private int jumlahPohon;
@@ -21,6 +23,12 @@ public class DataPenanaman {
 
     public String getIdPenanaman() { return idPenanaman; }
     public void setIdPenanaman(String idPenanaman) { this.idPenanaman = idPenanaman; }
+
+    public String getIdUser() { return idUser; }
+    public void setIdUser(String idUser) { this.idUser = idUser; }
+
+    public String getIdPohon() { return idPohon; }
+    public void setIdPohon(String idPohon) { this.idPohon = idPohon; }
 
     public String getLokasi() { return lokasi; }
     public void setLokasi(String lokasi) { this.lokasi = lokasi; }
@@ -43,16 +51,18 @@ public class DataPenanaman {
 
     public void simpanData(DataPenanaman data) {
         // Q-003: INSERT INTO data_penanaman
-        String sql = "INSERT INTO data_penanaman (lokasi, jenis_pohon, jumlah_pohon, tanggal, estimasi_karbon) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO data_penanaman (id_penanaman, id_user, id_pohon, lokasi, jenis_pohon, jumlah_pohon, tanggal_penanaman, estimasi_karbon) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            
-            pstmt.setString(1, this.lokasi);
-            pstmt.setString(2, this.jenisPohon);
-            pstmt.setInt(3, this.jumlahPohon);
-            pstmt.setDate(4, new java.sql.Date(this.tanggal.getTime()));
-            pstmt.setFloat(5, this.estimasiKarbon);
+            pstmt.setString(1, java.util.UUID.randomUUID().toString());
+            pstmt.setString(2, this.idUser);
+            pstmt.setString(3, this.idPohon);
+            pstmt.setString(4, this.lokasi);
+            pstmt.setString(5, this.jenisPohon);
+            pstmt.setInt(6, this.jumlahPohon);
+            pstmt.setDate(7, new java.sql.Date(this.tanggal.getTime()));
+            pstmt.setFloat(8, this.estimasiKarbon);
             
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -71,16 +81,19 @@ public class DataPenanaman {
     public List<DataPenanaman> getDataPenanaman() {
         // Q-001: SELECT * FROM data_penanaman ORDER BY tanggal DESC
         List<DataPenanaman> list = new ArrayList<>();
-        String sql = "SELECT * FROM data_penanaman ORDER BY tanggal DESC";
+        String sql = "SELECT * FROM data_penanaman ORDER BY tanggal_penanaman DESC";
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 DataPenanaman d = new DataPenanaman();
+                d.setIdPenanaman(rs.getString("id_penanaman"));
+                d.setIdUser(rs.getString("id_user"));
+                d.setIdPohon(rs.getString("id_pohon"));
                 d.setLokasi(rs.getString("lokasi"));
                 d.setJenisPohon(rs.getString("jenis_pohon"));
                 d.setJumlahPohon(rs.getInt("jumlah_pohon"));
-                d.setTanggal(rs.getDate("tanggal"));
+                d.setTanggal(rs.getDate("tanggal_penanaman"));
                 d.setEstimasiKarbon(rs.getFloat("estimasi_karbon"));
                 list.add(d);
             }

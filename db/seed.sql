@@ -1,4 +1,4 @@
-INSERT INTO data_pohon (id_pohon, id_user, nama_pohon, usia, lokasi, serapan_karbon, file_foto)
+INSERT INTO data_pohon (id_pohon, id_user, nama_pohon, usia, lokasi, kapasitas_serapan_karbon, file_foto_path)
 VALUES 
 ('P-01', 'user-001', 'Trembesi', 5, 'Bandung Utara', 28.5, 'pohon1.jpg'),
 ('P-02', 'user-002', 'Mahoni', 3, 'Bandung Tengah', 15.2, 'pohon2.jpg'),
@@ -12,7 +12,7 @@ VALUES
 ('P-10', 'user-002', 'Akasia', 3, 'Antapani', 12.0, 'pohon10.jpg');
 
 
-INSERT INTO data_penanaman (id_penanaman, id_user, id_pohon, lokasi, jenis_pohon, jumlah_pohon, tanggal, estimasi_karbon)
+INSERT INTO data_penanaman (id_penanaman, id_user, id_pohon, lokasi, jenis_pohon, jumlah_pohon, tanggal_penanaman, estimasi_karbon)
 VALUES 
 ('T-01', 'user-001', 'P-01', 'Taman Lansia', 'Trembesi', 20, '2026-01-10', 570.0),
 ('T-02', 'user-002', 'P-02', 'Babakan Siliwangi', 'Mahoni', 50, '2026-02-15', 760.0),

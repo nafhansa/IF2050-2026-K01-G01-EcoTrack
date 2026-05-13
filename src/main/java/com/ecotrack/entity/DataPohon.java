@@ -14,14 +14,19 @@ import com.ecotrack.util.DBConnection;
 
 public class DataPohon {
     private String idPohon;
+    private String idUser;
     private String namaPohon;
     private int usia;
     private String lokasi;
     private float serapanKarbon;
+    private String status;
     private String fileFoto;
 
     public String getIdPohon() { return idPohon; }
     public void setIdPohon(String idPohon) { this.idPohon = idPohon; }
+
+    public String getIdUser() { return idUser; }
+    public void setIdUser(String idUser) { this.idUser = idUser; }
 
     public String getNamaPohon() { return namaPohon; }
     public void setNamaPohon(String namaPohon) { this.namaPohon = namaPohon; }
@@ -34,6 +39,9 @@ public class DataPohon {
 
     public float getSerapanKarbon() { return serapanKarbon; }
     public void setSerapanKarbon(float serapanKarbon) { this.serapanKarbon = serapanKarbon; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
     public String getFileFoto() { return fileFoto; }
     public void setFileFoto(String fileFoto) { this.fileFoto = fileFoto; }
@@ -53,10 +61,13 @@ public class DataPohon {
             while (rs.next()) {
                 DataPohon p = new DataPohon();
                 p.setIdPohon(rs.getString("id_pohon"));
+                p.setIdUser(rs.getString("id_user"));
                 p.setNamaPohon(rs.getString("nama_pohon"));
                 p.setUsia(rs.getInt("usia"));
-                p.setSerapanKarbon(rs.getFloat("serapan_karbon"));
-                p.setFileFoto(rs.getString("file_foto"));
+                p.setLokasi(rs.getString("lokasi"));
+                p.setSerapanKarbon(rs.getFloat("kapasitas_serapan_karbon"));
+                p.setStatus(rs.getString("status"));
+                p.setFileFoto(rs.getString("file_foto_path"));
                 list.add(p);
             }
         } catch (SQLException e) {
@@ -68,15 +79,18 @@ public class DataPohon {
 
     public void simpanData(DataPohon data) {
         // Q-009: INSERT INTO data_pohon
-        String sql = "INSERT INTO data_pohon (id_pohon, nama_pohon, usia, serapan_karbon, file_foto) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO data_pohon (id_pohon, id_user, nama_pohon, usia, lokasi, kapasitas_serapan_karbon, status, file_foto_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            pstmt.setString(1, java.util.UUID.randomUUID().toString());
-            pstmt.setString(2, this.namaPohon);
-            pstmt.setInt(3, this.usia);
-            pstmt.setFloat(4, this.serapanKarbon);
-            pstmt.setString(5, this.fileFoto);
+            pstmt.setString(1, data.getIdPohon() != null ? data.getIdPohon() : java.util.UUID.randomUUID().toString());
+            pstmt.setString(2, data.getIdUser());
+            pstmt.setString(3, data.getNamaPohon());
+            pstmt.setInt(4, data.getUsia());
+            pstmt.setString(5, data.getLokasi());
+            pstmt.setFloat(6, data.getSerapanKarbon());
+            pstmt.setString(7, data.getStatus());
+            pstmt.setString(8, data.getFileFoto());
             
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -86,15 +100,18 @@ public class DataPohon {
 
     public void ubahData(DataPohon data) {
         // Q-010: UPDATE data_pohon
-        String sql = "UPDATE data_pohon SET nama_pohon = ?, usia = ?, serapan_karbon = ?, file_foto = ? WHERE id_pohon = ?";
+        String sql = "UPDATE data_pohon SET id_user = ?, nama_pohon = ?, usia = ?, lokasi = ?, kapasitas_serapan_karbon = ?, status = ?, file_foto_path = ? WHERE id_pohon = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            pstmt.setString(1, this.namaPohon);
-            pstmt.setInt(2, this.usia);
-            pstmt.setFloat(3, this.serapanKarbon);
-            pstmt.setString(4, this.fileFoto);
-            pstmt.setString(5, this.idPohon);
+            pstmt.setString(1, data.getIdUser());
+            pstmt.setString(2, data.getNamaPohon());
+            pstmt.setInt(3, data.getUsia());
+            pstmt.setString(4, data.getLokasi());
+            pstmt.setFloat(5, data.getSerapanKarbon());
+            pstmt.setString(6, data.getStatus());
+            pstmt.setString(7, data.getFileFoto());
+            pstmt.setString(8, data.getIdPohon());
             
             pstmt.executeUpdate();
         } catch (SQLException e) {
