@@ -1,20 +1,24 @@
 package com.ecotrack.controller;
 
-import com.ecotrack.entity.DataPohon;
-import com.ecotrack.entity.DataPenanaman;
-
-import java.util.ArrayList;
 import java.util.List;
 
+import com.ecotrack.entity.DataPenanaman;
+import com.ecotrack.entity.DataPohon;
+
 public class PenanamanController {
+    private DataPenanaman modelPenanaman = new DataPenanaman();
+    private DataPohon modelPohon = new DataPohon();
 
     public void cariData(String idPenanaman) {
         // Algo-051: result <- DataPenanaman.cariData(idPenanaman)
+        modelPenanaman.cariData(idPenanaman);
     }
 
     public List<DataPenanaman> ambilDataPenanaman() {
         // Algo-052: result <- DataPenanaman.getDataPenanaman()
-        return new DataPenanaman().getDataPenanaman();
+        List<DataPenanaman> result = modelPenanaman.getDataPenanaman();
+        teruskanKeView(result);
+        return result;
     }
 
     public String simpanDataPenanaman(DataPenanaman dataPenanaman) {
@@ -34,15 +38,15 @@ public class PenanamanController {
 
     public String ubahDataPenanaman(DataPenanaman dataPenanaman) {
         // Algo-054
-        // IF FormLaporanPenanaman.validasiData(dataPenanaman) = TRUE THEN
         dataPenanaman.setEstimasiKarbon(hitungEstimasiKarbon(dataPenanaman));
-        // result <- DataPenanaman.ubahData(dataPenanaman)
+        modelPenanaman.ubahData(dataPenanaman);
         teruskanKeView("Berhasil");
         return "Berhasil";
     }
 
     public String hapusDataPenanaman(String idPenanaman) {
         // Algo-055: result <- DataPenanaman.hapusData(idPenanaman)
+        modelPenanaman.hapusData(idPenanaman);
         teruskanKeView("Berhasil");
         return "Berhasil";
     }
@@ -67,7 +71,8 @@ public class PenanamanController {
         return dataPenanaman.getJumlahPohon() * serapanPerPohon;
     }
 
-    public void teruskanKeView(Object result) {
-        // Algo-057
+    public Object teruskanKeView(Object result) {
+        // Algo-057: ViewLaporanPenanaman.tampilkanData(result)
+        return result;            
     }
 }
