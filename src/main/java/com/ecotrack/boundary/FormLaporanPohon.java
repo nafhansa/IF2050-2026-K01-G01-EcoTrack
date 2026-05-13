@@ -3,14 +3,18 @@ package com.ecotrack.boundary;
 import com.ecotrack.controller.LaporanPohonController;
 import com.ecotrack.entity.LaporanPohon;
 import com.ecotrack.util.FileManager;
+import com.ecotrack.util.Session;
 import com.ecotrack.util.UIConstants;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
+import javafx.stage.FileChooser;
 
 import java.io.File;
 import java.util.List;
@@ -135,7 +139,7 @@ public class FormLaporanPohon extends BorderPane {
         
         uploadArea.setOnDragOver(this::handleDragOver);
         uploadArea.setOnDragDropped(this::handleDrop);
-        uploadArea.setOnMouseClicked(e -> handleFileUpload());
+        uploadArea.setOnMouseClicked(e -> handleFileUpload(uploadArea));
 
         SVGPath iconSvg = new SVGPath();
         iconSvg.setContent("M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15");
@@ -156,6 +160,7 @@ public class FormLaporanPohon extends BorderPane {
 
         Button browseBtn = new Button("Browse File");
         browseBtn.setStyle("-fx-background-color: white; -fx-text-fill: #0F766E; -fx-font-weight: bold; -fx-background-radius: 14; -fx-border-color: #5EEAD4; -fx-border-radius: 14; -fx-padding: 8 24 8 24;");
+        browseBtn.setOnAction(e -> handleFileUpload(uploadArea));
         
         Label formatText = new Label("Mendukung format PNG, JPG, atau JPEG");
         formatText.setStyle("-fx-font-family: 'Plus Jakarta Sans'; -fx-font-size: 12px; -fx-text-fill: #0D9488;");
@@ -170,6 +175,7 @@ public class FormLaporanPohon extends BorderPane {
 
         btnSimpan.setOnAction(e -> {
             LaporanPohon data = new LaporanPohon();
+            data.setIdUser(Session.getCurrentUser() != null ? Session.getCurrentUser().getIdUser() : null);
             data.setLokasi(fieldLokasi.getText());
             data.setKondisi(comboKondisi.getValue());
             data.setFileFoto(fileFoto);
@@ -275,15 +281,40 @@ public class FormLaporanPohon extends BorderPane {
         riwayatList.getItems().clear();
     }
 
-    public void handleFileUpload() {
-        // FileChooser implementation
+    public void handleFileUpload(VBox uploadArea) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Pilih Foto Bukti");
+        fileChooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("Gambar", "*.png", "*.jpg", "*.jpeg")
+        );
+        File selected = fileChooser.showOpenDialog(uploadArea.getScene().getWindow());
+        if (selected != null) {
+            fileFoto = selected.getAbsolutePath();
+            Label uploadText = (Label) uploadArea.getChildren().get(1);
+            uploadText.setText("File: " + selected.getName());
+        }
     }
 
     public void handleDragOver(DragEvent e) {
-        // Highlight border on drag over
+        if (e.getDragboard().hasFiles()) {
+            e.acceptTransferModes(TransferMode.COPY);
+        }
+        e.consume();
     }
 
     public void handleDrop(DragEvent e) {
-        // Handle dropped file
+        Dragboard db = e.getDragboard();
+        if (db.hasFiles()) {
+            File file = db.getFiles().get(0);
+            String name = file.getName().toLowerCase();
+            if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg")) {
+                fileFoto = file.getAbsolutePath();
+                VBox uploadArea = (VBox) e.getSource();
+                Label uploadText = (Label) uploadArea.getChildren().get(1);
+                uploadText.setText("File: " + file.getName());
+                e.setDropCompleted(true);
+            }
+        }
+        e.consume();
     }
 }

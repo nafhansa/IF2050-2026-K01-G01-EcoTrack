@@ -23,7 +23,7 @@ public class LaporanPohonController {
     }
 
     public String simpanLaporan(LaporanPohon dataLaporan) {
-        // Algo-060: result <- LaporanPohon.simpanLaporan(dataLaporan)
-        return "Berhasil";
+        dataLaporan.simpanLaporan(dataLaporan);
+        return "Berhasil menyimpan laporan pohon ke database!";
     }
 }

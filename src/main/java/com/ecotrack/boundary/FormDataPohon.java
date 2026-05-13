@@ -10,6 +10,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.FileChooser;
 import com.ecotrack.util.DBConnection;
 import java.sql.*;
 import java.util.ArrayList;
@@ -70,25 +71,6 @@ public class FormDataPohon {
 
         Button btnTambah = new Button("Tambah Pohon");
         btnTambah.setStyle("-fx-background-color: " + UIConstants.ACCENT_LIME + "; -fx-text-fill: black; -fx-font-weight: bold; -fx-background-radius: " + UIConstants.RADIUS_BUTTON);
-        btnTambah.setOnAction(e -> {
-            DataPohon data = new DataPohon();
-            data.setNamaPohon(fieldNama.getText());
-            try {
-                data.setUsia(Integer.parseInt(fieldUsia.getText()));
-            } catch (NumberFormatException ex) {
-                data.setUsia(0);
-            }
-            try {
-                data.setSerapanKarbon(Float.parseFloat(fieldSerapan.getText()));
-            } catch (NumberFormatException ex) {
-                data.setSerapanKarbon(0);
-            }
-            if (fileFotoPath != null) {
-                data.setFileFoto(fileFotoPath);
-            }
-            dataInput = data;
-            prosesInputPohon(data);
-        });
 
         HBox buttonBox = new HBox(16, btnBatal, btnTambah);
         buttonBox.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
@@ -136,9 +118,6 @@ public class FormDataPohon {
                 tampilkanStatus("Berhasil menambah pohon!");
             }
             tutupModal();
-
-            dataInput = data;
-            prosesInputPohon(data);
         });
 
     }
@@ -183,7 +162,16 @@ public class FormDataPohon {
     }
 
     public void unggahFoto() {
-        // FileChooser implementation
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Unggah Foto Pohon");
+        fileChooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("Gambar", "*.png", "*.jpg", "*.jpeg")
+        );
+        File selected = fileChooser.showOpenDialog(modalStage);
+        if (selected != null) {
+            fileFotoPath = selected.getAbsolutePath();
+            tampilkanStatus("Foto berhasil dipilih: " + selected.getName());
+        }
     }
 
     public void tutupModal() {
